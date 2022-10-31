@@ -10,7 +10,7 @@ let window = newWindow(
   "Voracity",
   ivec2(800,600),
   WindowStyle.Decorated, 
-  visible=false
+  visible = false
 )
 
 proc winSize (): IVec2 =
@@ -37,7 +37,7 @@ let
 var
   keyListeners:seq[KeyListener]
 
-proc addKeyListener (listener:KeyListener) =
+proc addKeyListener* (listener:KeyListener) =
   keyListeners.add(listener)
 
 func mousePressed* (button:Button): bool =
