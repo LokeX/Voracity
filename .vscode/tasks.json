@@ -7,7 +7,7 @@
       "label": "Voracity",
       "type" :"process",
       "command": "nim",
-      "args": ["c", "-r", "-o:exe\\voracity.exe", "voracity.nim"],
+      "args": ["c", "-r", "voracity.nim"],
       "problemMatcher": [],
       "group": {
         "kind": "build",

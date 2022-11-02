@@ -42,36 +42,40 @@ type
     draw:DrawCall
 
 let 
-  bgImage = readImage("engboard.jpg")
   aovel60White = font("AovelSansRounded-rdDL",60,color(1,1,1,1))
 var  
   calls*:seq[Call]
   bxy = newBoxy()
 
-proc addCall*(call:Call) =
-  calls.add(call)
+proc addCall*(call:Call) = calls.add(call)
 
-proc newCall*(keyboard:KeyCall, mouse:MouseCall, draw:DrawCall): Call =
-  Call(keyboard:keyboard,mouse:mouse,draw:draw)
+proc newCall*(k:KeyCall, m:MouseCall, d:DrawCall): Call =
+  Call(keyboard:k,mouse:m,draw:d)
 
-proc newCall*(keyboard:KeyCall, mouse:MouseCall): Call =
-  Call(keyboard:keyboard,mouse:mouse)
+proc newCall*(k:KeyCall, m:MouseCall): Call = Call(keyboard:k,mouse:m)
 
-proc newCall*(keyboard:KeyCall): Call =
-  Call(keyboard:keyboard)
+proc newCall*(k:KeyCall): Call = Call(keyboard:k)
 
-func mouseIsPressed* (button:Button): bool =
-  button in [
-    MouseLeft,
-    MouseRight,
-    MouseMiddle,
-    DoubleClick,
-    TripleClick,
-    QuadrupleClick
-  ]
+func mouseIsPressed*(button:Button): bool = button in [
+  MouseLeft,MouseRight,MouseMiddle,
+  DoubleClick,TripleClick,QuadrupleClick
+]
+
+proc mousePos (pos:Ivec2): tuple[x,y:int] =
+  (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
+
+window.onButtonPress = proc (button:Button) =
+  if button == KeyEscape:
+    echo "Esc button pressed"
+    window.closeRequested = true
+  else:
+    for call in calls:
+      if mouseIsPressed(button):
+        if call.mouse != nil: call.mouse (button,mousePos(window.mousePos))
+      else:
+        if call.keyboard != nil: call.keyboard (button,'a')
 
 #bxy.scale(1.5)
-#bxy.addImage("bg", readImage("bggreen.png"))
 bxy.addImage("board", readImage("engboard.jpg"))
 bxy.addImageHandles(cityload.diefaces)
 window.visible = true
@@ -83,27 +87,11 @@ proc drawText* (imageKey:string,x,y:float32,text: string) =
   bxy.addImage(imageKey, txt.textImage)
   bxy.drawImage(imageKey, txt.globalBounds.xy)
 
-proc mousePos (pos:Ivec2): tuple[x,y:int] =
-  (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
-
-window.onButtonPress = proc (button:Button) =
-  if button == KeyEscape:
-    echo "Esc button pressed"
-    window.closeRequested = true
-  else:
-    for call in calls:
-      if call.keyboard != nil: call.keyboard (button,'a')
-      if call.mouse != nil: call.mouse (button,mousePos(window.mousePos))
-
 window.onFrame = proc() =
   bxy.beginFrame(window.size)
   for call in calls:
     if call.draw != nil: call.draw(bxy)
-#  bxy.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
-  #bxy.pushLayer()
   bxy.drawImage("board", pos = vec2(200, 200))
-  #bxy.blurEffect(50)
-  #bxy.popLayer()
   bxy.drawImage("2", pos = vec2(100, 200)) 
   bxy.drawImage("1",pos = vec2(100, 300))
   bxy.drawRect(rect(vec2(300,300),vec2(500,500)),color(255,255,255,150))
