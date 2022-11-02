@@ -1,4 +1,5 @@
 import std/sequtils
+import strutils
 import std/os
 import boxy
 import sugar
@@ -31,5 +32,5 @@ var
   dieFaces* = imageHandles(loadDieFaceImages())
 
 #echo dieFaces.map(func(ih:ImageHandle):string = ih.namedImage.name)
-echo dieFaces.map(dieFace => dieFace.namedImage.name) 
+echo dieFaces.map(dieFace => dieFace.namedImage.name).join(",") 
 dieFaces[0].namedImage.image.applyOpacity(0.5)

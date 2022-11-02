@@ -1,10 +1,9 @@
 import boxy, opengl, times, windy
-import std/os
 import cityload
-#import slappy
 import citytext
 export windy
-#import citydice
+export boxy
+import strutils
 
 let window* = newWindow(
   "Voracity",
@@ -27,42 +26,54 @@ makeContextCurrent(window)
 loadExtensions()
 
 type
-  KeyListener = proc(button:Button)
-  Listener = ref object
-    call:KeyListener
+  MouseEvent* = tuple
+    button:Button
+    pos:tuple[x,y:int]
+  KeyEvent* = tuple
+    button:Button
+    ch:char
+  KeyCall = proc(keyboard:KeyEvent)
+  MouseCall = proc(mouse:MouseEvent)
+  DrawCall = proc(boxy:var Boxy)
+  Call = ref object
+    mode:string
+    keyboard:KeyCall
+    mouse:MouseCall
+    draw:DrawCall
 
 let 
   bgImage = readImage("engboard.jpg")
   aovel60White = font("AovelSansRounded-rdDL",60,color(1,1,1,1))
+var  
+  calls*:seq[Call]
   bxy = newBoxy()
 
-var
-  listeners*:seq[Listener]
+proc addCall* (mode:Call) =
+  calls.add(mode)
 
-proc addKeyListener* (listener:Listener) =
-  listeners.add(listener)
+proc newCall* (keyboard:KeyCall, mouse:MouseCall, draw:DrawCall): Call =
+  result = Call(keyboard:keyboard,mouse:mouse,draw:draw)
 
-proc newListener* (listener:KeyListener): Listener =
-  result = Listener(call:listener)
+proc newCall* (keyboard:KeyCall): Call =
+  result = Call(keyboard:keyboard)
 
-func mousePressed* (button:Button): bool =
-  result = button in [MouseLeft,MouseRight,MouseMiddle]
+proc newCall* (keyboard:KeyCall, mouse:MouseCall): Call =
+  result = Call(keyboard:keyboard,mouse:mouse)
 
-proc keyPressed (button:Button) =
-  if mousePressed(button):
-    echo "Mouse Pressed: ",button
-  else:
-    echo "Key pressed: ",button
+func mouseIsPressed* (button:Button): bool =
+  result = button in [
+    MouseLeft,
+    MouseRight,
+    MouseMiddle,
+    DoubleClick,
+    TripleClick,
+    QuadrupleClick
+  ]
 
 #bxy.scale(1.5)
 bxy.addImage("bg", readImage("bggreen.png"))
 bxy.addImage("board", bgImage)
 bxy.addImageHandles(cityload.diefaces)
-echo bxy.getImageSize("1")
-addKeyListener(newListener(keyPressed))
-#addKeyListener(keyPressed)
-#addKeyListener(citydice.keyPressed)
-echo "Done loading"
 window.visible = true
 #slappyInit()
 #discard newSound("sounds\\carstart-1.wav").play()
@@ -72,13 +83,18 @@ proc drawText* (imageKey:string,x,y:float32,text: string) =
   bxy.addImage(imageKey, txt.textImage)
   bxy.drawImage(imageKey, txt.globalBounds.xy)
 
+proc mousePos (pos:Ivec2): tuple[x,y:int] =
+  result = (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
+
 window.onButtonPress = proc (button:Button) =
   if button == KeyEscape:
     echo "Esc button pressed"
     window.closeRequested = true
   else:
-    for listener in listeners:
-      listener.call(button)
+    for call in calls:
+      if call.keyboard != nil: call.keyboard (button,'a')
+      if call.mouse != nil: call.mouse (button,mousePos(window.mousePos))
+      if call.draw != nil: call.draw(bxy)
 
 window.onFrame = proc() =
   bxy.beginFrame(window.size)
@@ -94,8 +110,3 @@ window.onFrame = proc() =
   "main-image2".drawText(500,100,now().format("hh:mm:ss"))
   bxy.endFrame()
   window.swapBuffers()
-
-
-#[ while not window.closeRequested:
-  sleep(30)
-  pollEvents() ]#
