@@ -8,7 +8,7 @@ proc mouse (m:MouseEvent) =
   echo "live mouse"
 
 proc draw (b:var Boxy) =
-  echo "live draw"
+  echo ""
 
 addCall(newCall(keyboard,mouse,draw))
 echo ("nr of modes: ", calls.len())

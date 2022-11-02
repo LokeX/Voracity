@@ -48,20 +48,20 @@ var
   calls*:seq[Call]
   bxy = newBoxy()
 
-proc addCall* (mode:Call) =
-  calls.add(mode)
+proc addCall*(call:Call) =
+  calls.add(call)
 
-proc newCall* (keyboard:KeyCall, mouse:MouseCall, draw:DrawCall): Call =
-  result = Call(keyboard:keyboard,mouse:mouse,draw:draw)
+proc newCall*(keyboard:KeyCall, mouse:MouseCall, draw:DrawCall): Call =
+  Call(keyboard:keyboard,mouse:mouse,draw:draw)
 
-proc newCall* (keyboard:KeyCall): Call =
-  result = Call(keyboard:keyboard)
+proc newCall*(keyboard:KeyCall, mouse:MouseCall): Call =
+  Call(keyboard:keyboard,mouse:mouse)
 
-proc newCall* (keyboard:KeyCall, mouse:MouseCall): Call =
-  result = Call(keyboard:keyboard,mouse:mouse)
+proc newCall*(keyboard:KeyCall): Call =
+  Call(keyboard:keyboard)
 
 func mouseIsPressed* (button:Button): bool =
-  result = button in [
+  button in [
     MouseLeft,
     MouseRight,
     MouseMiddle,
@@ -84,7 +84,7 @@ proc drawText* (imageKey:string,x,y:float32,text: string) =
   bxy.drawImage(imageKey, txt.globalBounds.xy)
 
 proc mousePos (pos:Ivec2): tuple[x,y:int] =
-  result = (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
+  (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
 
 window.onButtonPress = proc (button:Button) =
   if button == KeyEscape:
@@ -94,10 +94,11 @@ window.onButtonPress = proc (button:Button) =
     for call in calls:
       if call.keyboard != nil: call.keyboard (button,'a')
       if call.mouse != nil: call.mouse (button,mousePos(window.mousePos))
-      if call.draw != nil: call.draw(bxy)
 
 window.onFrame = proc() =
   bxy.beginFrame(window.size)
+#[   for call in calls:
+     if call.draw != nil: call.draw(bxy) ]#
   bxy.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
   #bxy.pushLayer()
   bxy.drawImage("board", pos = vec2(200, 200))
