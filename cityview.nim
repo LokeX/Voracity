@@ -71,8 +71,8 @@ func mouseIsPressed* (button:Button): bool =
   ]
 
 #bxy.scale(1.5)
-bxy.addImage("bg", readImage("bggreen.png"))
-bxy.addImage("board", bgImage)
+#bxy.addImage("bg", readImage("bggreen.png"))
+bxy.addImage("board", readImage("engboard.jpg"))
 bxy.addImageHandles(cityload.diefaces)
 window.visible = true
 #slappyInit()
@@ -97,9 +97,9 @@ window.onButtonPress = proc (button:Button) =
 
 window.onFrame = proc() =
   bxy.beginFrame(window.size)
-#[   for call in calls:
-     if call.draw != nil: call.draw(bxy) ]#
-  bxy.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
+  for call in calls:
+    if call.draw != nil: call.draw(bxy)
+#  bxy.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
   #bxy.pushLayer()
   bxy.drawImage("board", pos = vec2(200, 200))
   #bxy.blurEffect(50)

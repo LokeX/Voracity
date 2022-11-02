@@ -8,7 +8,8 @@ proc mouse (m:MouseEvent) =
   echo "live mouse"
 
 proc draw (b:var Boxy) =
-  echo ""
+  if not b.contains("bg"): b.addImage("bg", readImage("bggreen.png"))
+  b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
 
 addCall(newCall(keyboard,mouse,draw))
 echo ("nr of modes: ", calls.len())
