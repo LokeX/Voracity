@@ -2,7 +2,6 @@ import cityview
 
 let
   dieFaces* = loadImages("pics\\diefaces\\*.gif")
-
 addImages(dieFaces)
 
 proc keyboard (k:KeyEvent) =
@@ -14,11 +13,13 @@ proc keyboard (k:KeyEvent) =
     echo "Rune: ",k.rune
 
 proc mouse (m:MouseEvent) =
-  echo "dice mouse:"
-  echo m.keyState
-  echo m.button
-  if not isMouseKeyEvent(m.keyState):
+  if isMouseKeyEvent(m.keyState):
+    echo "mouse clicked:"
+    echo m.keyState
+    echo m.button
+#[   if not isMouseKeyEvent(m.keyState):
     echo "mouse moved: ",m.pos.x,",",m.pos.y
+ ]#
 
 proc draw (b:var Boxy) =
   b.drawImage("2", pos = vec2(100, 200)) 

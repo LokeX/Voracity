@@ -7,12 +7,11 @@ import times
 let
   board: ImageName = (name:"board", image:readImage("engboard.jpg"))
   bg: ImageName = ("bg", readImage("bggreen.png"))
-
 addImage(bg)
 addImage(board)
 
 proc keyboard (k:KeyEvent) =
-  echo "live keyboard:"
+  echo "Voracity keyboard:"
   echo k.keyState
   echo k.button
 #  echo k.rune
@@ -20,12 +19,13 @@ proc keyboard (k:KeyEvent) =
     echo "Rune: ",k.rune
 
 proc mouse (m:MouseEvent) =
-  echo "live mouse:"
-  echo m.keyState
-  echo m.button
-  if not isMouseKeyEvent(m.keyState):
+  if isMouseKeyEvent(m.keyState):
+    echo "mouse clicked:"
+    echo m.keyState
+    echo m.button
+#[   if not isMouseKeyEvent(m.keyState):
     echo "mouse moved: ",m.pos.x,",",m.pos.y
-
+ ]#
 proc draw (b:var Boxy) =
   b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
   b.drawText("main-image",100,100,"Current time:")

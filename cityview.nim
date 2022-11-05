@@ -17,7 +17,7 @@ proc winSize*(): IVec2 =
   let 
     scr = getScreens()[0]
     width = cast[int32](scr.right-(scr.right div 20))
-    height = cast[int32](scr.bottom-(scr.bottom div 5))  
+    height = cast[int32](scr.bottom-(scr.bottom div 7))  
   ivec2(width,height)
 
 window.size = winSize()
@@ -58,11 +58,14 @@ type
     mouse:MouseCall
     draw:DrawCall
 
+let
+  scrWidth* = getScreens()[0].right
+  scrHeight* = getScreens()[0].bottom
 var
-  scale*: float32 = 1.0
+  boxyScale*: float32 = 1+(1-(1024/scrWidth))
   calls*:seq[Call]
   bxy = newBoxy()
-bxy.scale(scale)
+bxy.scale(boxyScale)
 
 proc addCall*(call:Call) = calls.add(call)
 
@@ -139,7 +142,6 @@ proc addImages*(ihs:seq[ImageName]) =
 
 window.onButtonPress = proc (button:Button) =
   if button == KeyEscape:
-    echo "Esc button pressed"
     window.closeRequested = true
   else:
     for call in calls:
