@@ -1,7 +1,10 @@
 import boxy, opengl, windy
-import cityload
+import std/sequtils
+import std/os
 export boxy
 export windy
+export os
+import slappy
 
 let window* = newWindow(
   "Voracity",
@@ -20,10 +23,23 @@ proc winSize*(): IVec2 =
 window.size = winSize()
 window.pos = ivec2(110,110)
 window.icon = readImage("barman.png")
+window.runeInputEnabled = true
+window.visible = true
 makeContextCurrent(window)
 loadExtensions()
+slappyInit()
+
+proc playSound*(sound:string) =
+  #carstart-1
+  discard newSound("sounds\\"&sound&".wav").play()
 
 type
+  FileName     = tuple[name,path:string]
+  ImageName*   = tuple[name:string,image:Image]
+  ImageHandle* = ref object 
+    namedImage:ImageName
+    x,y:int
+
   KeyState = tuple[down,pressed,released,toggle:bool]
   Event = object of RootObj
     keyState*: KeyState
@@ -42,9 +58,11 @@ type
     mouse:MouseCall
     draw:DrawCall
 
-var  
+var
+  scale*: float32 = 1.0
   calls*:seq[Call]
   bxy = newBoxy()
+bxy.scale(scale)
 
 proc addCall*(call:Call) = calls.add(call)
 
@@ -97,6 +115,28 @@ proc newMouseEvent (button:Button): MouseEvent =
     else: 
       newMouseMoveEvent()
 
+func fileNames*(paths: seq[string]): seq[FileName] =
+  for path in paths: 
+    result.add (splitFile(path).name,path)
+
+func imageHandles*(namedImages: seq[ImageName]): seq[ImageHandle] =
+  for namedImage in namedImages:
+    result.add(ImageHandle(namedImage:namedImage))
+
+proc loadImages(files:seq[FileName]): seq[ImageName] =
+  for file in files:
+    result.add (file.name,readImage(file.path))
+
+proc loadImages*(s:string): seq[ImageName] =
+  loadImages(toSeq(walkFiles(s)).fileNames())
+
+proc addImage*(ih:ImageName) =
+  bxy.addImage(ih.name,ih.image)
+
+proc addImages*(ihs:seq[ImageName]) =
+  for ih in ihs:
+    bxy.addImage(ih.name,ih.image)
+
 window.onButtonPress = proc (button:Button) =
   if button == KeyEscape:
     echo "Esc button pressed"
@@ -108,22 +148,23 @@ window.onButtonPress = proc (button:Button) =
           call.mouse(newMouseEvent(button))
       else:
         if call.keyboard != nil: 
-          call.keyboard(newKeyEvent(button,"*".toRunes[0]))
-
-#bxy.scale(1.5)
-bxy.addImage("board", readImage("engboard.jpg"))
-bxy.addImageHandles(cityload.diefaces)
-window.visible = true
-#slappyInit()
-#discard newSound("sounds\\carstart-1.wav").play()
+          call.keyboard(newKeyEvent(button,"¤".toRunes[0]))
 
 window.onFrame = proc() =
   bxy.beginFrame(window.size)
   for call in calls:
     if call.draw != nil: call.draw(bxy)
-  bxy.drawImage("board", pos = vec2(200, 200))
-  bxy.drawImage("2", pos = vec2(100, 200)) 
-  bxy.drawImage("1",pos = vec2(100, 300))
-  bxy.drawRect(rect(vec2(300,300),vec2(500,500)),color(255,255,255,150))
   bxy.endFrame()
   window.swapBuffers()
+
+window.onRune = proc(rune:Rune) =
+#  echo "got rune: ",rune
+  var button:Button
+  for call in calls:
+    if call.keyboard != nil: 
+      call.keyboard(newKeyEvent(button,rune))
+
+window.onMouseMove = proc () =
+  for call in calls:
+    if call.mouse != nil: 
+      call.mouse(newMouseMoveEvent())
