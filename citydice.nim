@@ -3,12 +3,16 @@ import cityview
 let
   dieFaces* = loadImages("pics\\diefaces\\*.gif")
 addImages(dieFaces)
+let
+  dieFace1 = newMouseHandle(dieFaces[0],100,200)
+  dieFace2 = newMouseHandle(dieFaces[1],100,265)
+addMouseHandle(dieFace1)
+addMouseHandle(dieFace2)
 
 proc keyboard (k:KeyEvent) =
   echo "dice keyboard:"
   echo k.keyState
   echo k.button
-#  echo k.rune
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
 
@@ -22,8 +26,8 @@ proc mouse (m:MouseEvent) =
  ]#
 
 proc draw (b:var Boxy) =
-  b.drawImage("2", pos = vec2(100, 200)) 
-  b.drawImage("1",pos = vec2(100, 300))
+  b.drawImage("1", pos = vec2(100, 200)) 
+  b.drawImage("2",pos = vec2(100, 265))
   
 proc initDice*() =
   addCall(newCall(keyboard,mouse,draw))
