@@ -1,0 +1,26 @@
+Bar
+Gas Station
+Bank
+Town Hall
+Highway
+Barracks
+Church
+Villa
+Embassey
+Courthouse
+Airport
+Casino
+Jeweler
+Bank
+Gas Station
+Bar
+Highway
+Bar
+Disco
+Bar
+Brothel
+Realestate
+Shop
+Bank
+Hospital
+

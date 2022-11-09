@@ -41,7 +41,8 @@ let
   scr = getScreens()[0]
   scrWidth = cast[int32](scr.right-(scr.right div 20))
   scrHeight = cast[int32](scr.bottom-(scr.bottom div 7))  
-  boxyScale*: float = 1+(1-(1024/scrWidth))
+#  boxyScale*: float = 1+(1-(1024/scrWidth))
+  boxyScale*: float = 1
 
 window.size = ivec2(scrWidth,scrHeight)
 window.pos = ivec2(110,110)
@@ -57,6 +58,7 @@ var
   bxy = newBoxy()
 
 bxy.scale(boxyScale)
+#bxy.scale(1)
 window.visible = true
 
 proc winSize*(): IVec2 =

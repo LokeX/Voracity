@@ -25,28 +25,21 @@ proc mouseOnDice(): bool =
 proc rollDice() =
   die1 = rand(1..6).intToStr()
   die2 = rand(1..6).intToStr()
-  if dieRollFrame < maxRollFrames: inc dieRollFrame
 
 proc keyboard (k:KeyEvent) =
-  echo "dice keyboard:"
-  echo k.keyState
-  echo k.button
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
-    echo "mouse clicked:"
-    echo m.keyState
-    echo m.button
-    echo "diceClicked:",mouseOnDice()
     if dieRollFrame == maxRollFrames and mouseOnDice(): 
       dieRollFrame = 0
       playSound("wuerfelbecher")
-      #rollDice()
 
 proc draw (b:var Boxy) =
-  if dieRollFrame < maxRollFrames: rollDice()
+  if dieRollFrame < maxRollFrames: 
+    rollDice()
+    inc dieRollFrame
   b.drawImage(die1,pos = vec2(100, 200)) 
   b.drawImage(die2,pos = vec2(100, 265))
   
