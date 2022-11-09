@@ -43,5 +43,5 @@ proc draw (b:var Boxy) =
   b.drawImage(die1,pos = vec2(100, 200)) 
   b.drawImage(die2,pos = vec2(100, 265))
   
-proc initDice*() =
+proc initCityDice*() =
   addCall(newCall("citydice",keyboard,mouse,draw))
