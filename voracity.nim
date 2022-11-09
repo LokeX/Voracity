@@ -7,12 +7,11 @@ import times
 let
   board: ImageName = ("board", readImage("engboard.jpg"))
   bg: ImageName = ("bg", readImage("bggreen.png"))
+  boardMouse = newMouseHandle(board,200,100)
+
 addImage(bg)
 addImage(board)
-let
-  boardMouse = newMouseHandle(board,200,200)
 addMouseHandle(boardMouse)
-#echoMouseHandles()
 
 proc keyboard (k:KeyEvent) =
   echo "Voracity keyboard:"
@@ -22,7 +21,7 @@ proc keyboard (k:KeyEvent) =
     echo "Rune: ",k.rune
 
 proc mouse (m:MouseEvent) =
-  if isMouseKeyEvent(m.keyState):
+  if mouseClicked(m.keyState):
     echo "mouse clicked:"
     echo m.keyState
     echo m.button
@@ -33,19 +32,17 @@ proc mouse (m:MouseEvent) =
  ]#
 proc draw (b:var Boxy) =
   b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
-  b.drawText("text1",100,100,"Current time:")
-  b.drawText("text2",500,100,now().format("hh:mm:ss"))
-  b.drawText("text3",800,100,mouseOnHandle())
-  b.drawImage("board", pos = vec2(200, 200))
+#[   b.drawText("text1",100,100,"Current time:")
+  b.drawText("text2",500,100,now().format("hh:mm:ss")) ]#
+  b.drawText("text3",800,25,mouseOn())
+  b.drawImage("board", pos = vec2(200, 100))
   b.drawRect(rect(vec2(300,300),vec2(500,500)),color(255,255,255,150))
 
-addCall(newCall(keyboard,mouse,draw))
+addCall(newCall("voracity",keyboard,mouse,draw))
 initDice()
-echo ("nr of modes: ", calls.len())
-echo "handles:",mouseHandles.len()
-#[ for handle in mouseHandles: 
-  echo (handle.name)
- ]#
+echo "nr of recievers: ",calls.len()
+echo "nr of mouse handles:",mouseHandles.len()
+
 while not window.closeRequested:
   sleep(30)
   pollEvents()

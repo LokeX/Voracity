@@ -1,74 +1,69 @@
 import boxy, opengl, windy
 import std/sequtils
 import std/os
+import slappy
 export boxy
 export windy
 export os
-import slappy
-
-let window* = newWindow(
-  "Voracity",
-  ivec2(800,600),
-  WindowStyle.DecoratedResizable, 
-  visible = false
-)
-
-proc winSize*(): IVec2 =
-  let 
-    scr = getScreens()[0]
-    width = cast[int32](scr.right-(scr.right div 20))
-    height = cast[int32](scr.bottom-(scr.bottom div 7))  
-  ivec2(width,height)
-
-window.size = winSize()
-window.pos = ivec2(110,110)
-window.icon = readImage("barman.png")
-window.runeInputEnabled = true
-window.floating=true
-#[ window.fullscreen=false
-window.maximized=true ]#
-window.visible = true
-makeContextCurrent(window)
-loadExtensions()
-slappyInit()
-
-proc playSound*(sound:string) =
-  discard newSound("sounds\\"&sound&".wav").play()
 
 type
   FileName     = tuple[name,path:string]
   ImageName*   = tuple[name:string,image:Image]
   MouseHandle* = ref object 
-    name:string
-    x1,y1,x2,y2:int
+    name*          :string
+    x1*,y1*,x2*,y2*:int
 
   KeyState = tuple[down,pressed,released,toggle:bool]
-  Event = object of RootObj
+  Event    = object of RootObj
     keyState*: KeyState
-    button*:Button
+    button*  :Button
   MouseEvent* = ref object of Event
-    pos*:tuple[x,y:int]
-  KeyEvent* = ref object of Event
+    pos* :tuple[x,y:int]
+  KeyEvent*   = ref object of Event
     rune*:Rune
 
-  KeyCall = proc(keyboard:KeyEvent)
+  KeyCall   = proc(keyboard:KeyEvent)
   MouseCall = proc(mouse:MouseEvent)
-  DrawCall = proc(boxy:var Boxy)
-  Call = ref object
-    mode:string
+  DrawCall  = proc(boxy:var Boxy)
+  Call      = ref object
+    reciever:string
     keyboard:KeyCall
-    mouse:MouseCall
-    draw:DrawCall
+    mouse   :MouseCall
+    draw    :DrawCall
 
-let
-  scrWidth* = getScreens()[0].right
-  scrHeight* = getScreens()[0].bottom
+let 
+  window* = newWindow(
+    "Voracity",
+    ivec2(800,600),
+    WindowStyle.DecoratedResizable, 
+    visible = false
+  )
+  scr = getScreens()[0]
+  scrWidth = cast[int32](scr.right-(scr.right div 20))
+  scrHeight = cast[int32](scr.bottom-(scr.bottom div 7))  
+  boxyScale*: float = 1+(1-(1024/scrWidth))
+
+window.size = ivec2(scrWidth,scrHeight)
+window.pos = ivec2(110,110)
+window.icon = readImage("barman.png")
+window.runeInputEnabled = true
+makeContextCurrent(window)
+loadExtensions()
+slappyInit()
+
 var
-  boxyScale*: float32 = 1+(1-(1024/scrWidth))
   calls*:seq[Call]
   mouseHandles*:seq[MouseHandle]
   bxy = newBoxy()
+
 bxy.scale(boxyScale)
+window.visible = true
+
+proc winSize*(): IVec2 =
+  ivec2(scrWidth,scrHeight)
+
+proc playSound*(sound:string) =
+  discard newSound("sounds\\"&sound&".wav").play()
 
 proc echoMouseHandles*() =
   for mouse in mouseHandles:
@@ -76,28 +71,19 @@ proc echoMouseHandles*() =
 
 proc addCall*(call:Call) = calls.add(call)
 
-proc newCall*(k:KeyCall, m:MouseCall, d:DrawCall): Call =
-  Call(keyboard:k,mouse:m,draw:d)
+proc newCall*(r:string, k:KeyCall, m:MouseCall, d:DrawCall): Call =
+  Call(reciever:r,keyboard:k,mouse:m,draw:d)
 
-proc newCall*(k:KeyCall, m:MouseCall): Call = 
-  Call(keyboard:k,mouse:m)
-
-proc newCall*(k:KeyCall): Call = Call(keyboard:k)
-
-func mouseKeyEvent(button:Button): bool = 
+func mouseClicked(button:Button): bool = 
   button in [
     MouseLeft,MouseRight,MouseMiddle,
     DoubleClick,TripleClick,QuadrupleClick
   ]
 
-func isMouseKeyEvent*(k:KeyState): bool = 
+func mouseClicked*(k:KeyState): bool = 
   k.down or k.pressed or k.released
 
-#[ proc mousePos(pos:Ivec2): tuple[x,y:int] =
-  (cast[int](window.mousePos[0]),cast[int](window.mousePos[1]))
- ]#
-
-proc mousePos(pos:Ivec2): tuple[x,y:int] =
+func mousePos(pos:Ivec2): tuple[x,y:int] =
   (cast[int](pos[0]),cast[int](pos[1]))
 
 proc keyState(b:Button): KeyState =
@@ -124,7 +110,7 @@ proc newKeyEvent(b:Button,r:Rune): KeyEvent =
   )
 
 proc newMouseEvent(button:Button): MouseEvent =
-    if mouseKeyEvent(button): 
+    if mouseClicked(button): 
       newMouseKeyEvent(button) 
     else: 
       newMouseMoveEvent()
@@ -133,19 +119,19 @@ func fileNames*(paths: seq[string]): seq[FileName] =
   for path in paths: 
     result.add (splitFile(path).name,path)
 
-proc mouseOnHandle*(h:MouseHandle): bool =
+proc mouseOn*(h:MouseHandle): bool =
   let
     (mx,my) = mousePos(window.mousePos)
   h.x1 <= mx and h.y1 <= my and mx <= h.x2 and my <= h.y2
 
-proc mouseOnHandle*(): string =
+proc mouseOn*(): string =
   for i in countdown(mouseHandles.len-1,0):
-    if mouseOnHandle(mouseHandles[i]):
+    if mouseOn(mouseHandles[i]):
       return mouseHandles[i].name
   return "None"
 
 proc mouseOn*(imgName:ImageName): bool =
-  mouseOnHandle() == imgName.name
+  mouseOn() == imgName.name
 
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(
@@ -184,7 +170,7 @@ window.onButtonPress = proc (button:Button) =
     window.closeRequested = true
   else:
     for call in calls:
-      if mouseKeyEvent(button):
+      if mouseClicked(button):
         if call.mouse != nil: 
           call.mouse(newMouseEvent(button))
       else:
@@ -199,7 +185,6 @@ window.onFrame = proc() =
   window.swapBuffers()
 
 window.onRune = proc(rune:Rune) =
-#  echo "got rune: ",rune
   var button:Button
   for call in calls:
     if call.keyboard != nil: 
