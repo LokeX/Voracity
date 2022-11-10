@@ -23,4 +23,39 @@ Realestate
 Shop
 Bank
 Hospital
+Undertaker
+Gas Station
+Bar
+Highway
+McLeans
+Condo
+Condo
+Lawyers
+Shop
+Bar
+Prison
+Gas Station
+Bank
+Debt Collector
+Bar
+Highway
+Shop
+Entreprenour
+Shop
+Pharmacy
+Bar
+Gas Station
+Brewery
+Harbour
+Shop
+Bar
+Bank
+Highway
+Bar
+Import inc
+Slum
+Alley
+Slum
+Slum
+Police Station
 

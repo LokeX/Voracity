@@ -9,13 +9,10 @@ addMouseHandle(boardMouse)
 
 proc lineReadFile (filePath:string): seq[string] =
   var 
-    textFile: File
-  try:
-    textFile = open(filePath,fmRead)
-    while not endOfFile(textFile):
-      result.add(textFile.readLine)
-  finally:
-    close(textFile)
+    text = open(filePath,fmRead)
+  while not endOfFile(text):
+    result.add(text.readLine)
+  close(text)
 
 var
   squares = lineReadFile("dat\\board.txt")
@@ -32,7 +29,7 @@ proc mouse (m:MouseEvent) =
       playSound("carstart-1")
 
 proc draw (b:var Boxy) =
-  b.drawImage("board", pos = vec2(200, 100))
+  b.drawImage("board",vec2(200, 100))
 
 proc initCityBoard*() =
   addCall(newCall("board",keyboard,mouse,draw))
