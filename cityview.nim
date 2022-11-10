@@ -39,12 +39,14 @@ let
     visible = false
   )
   scr = getScreens()[0]
-  scrWidth = cast[int32](scr.right-(scr.right div 20))
-  scrHeight = cast[int32](scr.bottom-(scr.bottom div 7))  
+  scrWidth* = cast[int32](scr.right)
+  scrHeight* = cast[int32](scr.bottom)
+  winWidth* = scrWidth-(scrWidth div 20)
+  winHeight* = scrHeight-(scrHeight div 8)
 #  boxyScale*: float = 1+(1-(1024/scrWidth))
   boxyScale*: float = 1
 
-window.size = ivec2(scrWidth,scrHeight)
+window.size = ivec2(winWidth,winHeight)
 window.pos = ivec2(110,110)
 window.icon = readImage("barman.png")
 window.runeInputEnabled = true
@@ -62,7 +64,7 @@ bxy.scale(boxyScale)
 window.visible = true
 
 proc winSize*(): IVec2 =
-  ivec2(scrWidth,scrHeight)
+  ivec2(winWidth,winHeight)
 
 proc playSound*(sound:string) =
   discard newSound("sounds\\"&sound&".wav").play()

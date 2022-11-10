@@ -1,24 +1,26 @@
 import cityview
 
 let
-  fileName = "dat\\board.txt"
   board = ("board", readImage("engboard.jpg"))
   boardMouse = newMouseHandle(board,200,100)
 
 addImage(board)
 addMouseHandle(boardMouse)
 
-var
-  boardData: File
-  squares:seq[string]
+proc lineReadFile (filePath:string): seq[string] =
+  var 
+    textFile: File
+  try:
+    textFile = open(filePath,fmRead)
+    while not endOfFile(textFile):
+      result.add(textFile.readLine)
+  finally:
+    close(textFile)
 
-try:
-  boardData = open(fileName,fmRead)
-  while not endOfFile(boardData):
-    squares.add(boardData.readLine)
-    echo squares[^1]
-finally:
-  close(boardData)
+var
+  squares = lineReadFile("dat\\board.txt")
+
+echo squares
 
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
