@@ -9,6 +9,9 @@ export os
 type
   FileName     = tuple[name,path:string]
   ImageName*   = tuple[name:string,image:Image]
+  ImageHandle  = ref object
+    img :ImageName
+    area:tuple[x,y,w,h:int]
   MouseHandle* = ref object 
     name*          :string
     x1*,y1*,x2*,y2*:int
@@ -137,6 +140,9 @@ proc mouseOn*(): string =
 proc mouseOn*(imgName:ImageName): bool =
   mouseOn() == imgName.name
 
+proc mouseOn*(ih:ImageHandle): bool =
+  mouseOn() == ih.img.name
+
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(
     name:hn,
@@ -146,14 +152,19 @@ proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
     y2:((y+h).toFloat*boxyScale).toInt
   )    
 
-proc newMouseHandle*(ni:ImageName,x,y:int): MouseHandle =  
+proc newMouseHandle*(ih:ImageHandle): MouseHandle =  
   let
-    w = ni.image.width
-    h = ni.image.height
-  newMouseHandle(ni.name,x,y,w,h)
+    (x,y,w,h) = ih.area
+  newMouseHandle(ih.img.name,x,y,w,h)
 
 proc addMouseHandle*(mh:MouseHandle) =
   mouseHandles.add(mh)
+
+proc newImageHandle*(img:ImageName,x,y:int): ImageHandle =
+  ImageHandle(
+    img:(img.name,img.image),
+    area:(x,y,img.image.width,img.image.height)
+  )
 
 proc loadImages(files:seq[FileName]): seq[ImageName] =
   for file in files:
@@ -164,6 +175,9 @@ proc loadImages*(s:string): seq[ImageName] =
 
 proc addImage*(ih:ImageName) =
   bxy.addImage(ih.name,ih.image)
+
+proc addImage*(ih:ImageHandle) =
+  addImage(ih.img)
 
 proc addImages*(ihs:seq[ImageName]) =
   for ih in ihs:

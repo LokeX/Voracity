@@ -4,12 +4,12 @@ import random
 
 let
   dieFaces* = loadImages("pics\\diefaces\\*.gif")
-  dieFace1 = newMouseHandle(dieFaces[0],100,200)
-  dieFace2 = newMouseHandle(dieFaces[1],100,265)
+  dieFace1 = newImageHandle(dieFaces[0],100,200)
+  dieFace2 = newImageHandle(dieFaces[1],100,265)
 
 addImages(dieFaces)
-addMouseHandle(dieFace1)
-addMouseHandle(dieFace2)
+addMouseHandle(newMouseHandle(dieFace1))
+addMouseHandle(newMouseHandle(dieFace2))
 randomize()
 
 const

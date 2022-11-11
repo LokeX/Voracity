@@ -1,11 +1,10 @@
 import cityview
 
 let
-  board = ("board", readImage("engboard.jpg"))
-  boardMouse = newMouseHandle(board,200,100)
+  board = newImageHandle(("board", readImage("engboard.jpg")),200,100)
 
 addImage(board)
-addMouseHandle(boardMouse)
+addMouseHandle(newMouseHandle(board))
 
 proc lineReadFile (filePath:string): seq[string] =
   var 
@@ -30,6 +29,8 @@ proc mouse (m:MouseEvent) =
 
 proc draw (b:var Boxy) =
   b.drawImage("board",vec2(200, 100))
+  b.drawRect(rect(vec2(420,170),vec2(35,100)),color(255,255,255,100))
+  b.drawRect(rect(vec2(462,170),vec2(35,100)),color(255,255,255,100))
 
 proc initCityBoard*() =
   addCall(newCall("board",keyboard,mouse,draw))
