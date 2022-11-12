@@ -7,17 +7,25 @@ export windy
 export os
 
 type
-  FileName     = tuple[name,path:string]
-  ImageName*   = tuple[name:string,image:Image]
-  ImageHandle  = ref object
-    img :ImageName
-    area:tuple[x,y,w,h:int]
-  MouseHandle* = ref object 
-    name*          :string
-    x1*,y1*,x2*,y2*:int
+  FileName   = tuple[name,path:string]
+  ImageName* = tuple[name:string,image:Image]
+  
+  Area* = tuple[x,y,w,h:int]
+  NamedImage = object of RootObj
+    img*:ImageName
+  NamedArea  = object of RootObj
+    name*:string
+  ImageHandle* = ref object of NamedImage
+    area*:Area
+  AreaHandle*  = ref object of NamedArea
+    area*:Area
 
-  KeyState = tuple[down,pressed,released,toggle:bool]
-  Event    = object of RootObj
+  MouseHandle* = ref object 
+    name       :string
+    x1,y1,x2,y2:int
+
+  KeyState* = tuple[down,pressed,released,toggle:bool]
+  Event     = object of RootObj
     keyState*: KeyState
     button*  :Button
   MouseEvent* = ref object of Event
@@ -143,6 +151,9 @@ proc mouseOn*(imgName:ImageName): bool =
 proc mouseOn*(ih:ImageHandle): bool =
   mouseOn() == ih.img.name
 
+proc mouseOn*(ah:AreaHandle): bool =
+  mouseOn() == ah.name
+
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(
     name:hn,
@@ -150,7 +161,12 @@ proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
     y1:(y.toFloat*boxyScale).toInt,
     x2:((x+w).toFloat*boxyScale).toInt,
     y2:((y+h).toFloat*boxyScale).toInt
-  )    
+  )
+
+proc newMouseHandle*(ah:AreaHandle): MouseHandle =
+  let
+    (x,y,w,h) = ah.area
+  newMouseHandle(ah.name,x,y,w,h)
 
 proc newMouseHandle*(ih:ImageHandle): MouseHandle =  
   let
@@ -166,6 +182,9 @@ proc newImageHandle*(img:ImageName,x,y:int): ImageHandle =
     area:(x,y,img.image.width,img.image.height)
   )
 
+proc newAreaHandle*(name:string,x,y,w,h:int): AreaHandle =
+  AreaHandle(name:name,area:(x,y,w,h))
+ 
 proc loadImages(files:seq[FileName]): seq[ImageName] =
   for file in files:
     result.add (file.name,readImage(file.path))
