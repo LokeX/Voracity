@@ -54,8 +54,8 @@ let
   scrHeight* = cast[int32](scr.bottom)
   winWidth* = scrWidth-(scrWidth div 20)
   winHeight* = scrHeight-(scrHeight div 8)
-#  boxyScale*: float = 1+(1-(1024/scrWidth))
-  boxyScale*: float = 1
+  boxyScale*: float = 1+(1-(1024/scrWidth))
+#  boxyScale*: float = 1
 
 window.size = ivec2(winWidth,winHeight)
 window.pos = ivec2(110,110)
@@ -192,6 +192,9 @@ func toRect*(area:Area): Rect =
 
 proc newAreaHandle*(name:string,x,y,w,h:int): AreaHandle =
   AreaHandle(name:name,area:(x,y,w,h))
+ 
+proc newAreaHandle*(ah:tuple[name:string,area:Area]): AreaHandle =
+  AreaHandle(name:ah.name,area:ah.area)
  
 proc loadImages(files:seq[FileName]): seq[ImageName] =
   for file in files:
