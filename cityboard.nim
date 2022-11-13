@@ -1,4 +1,5 @@
 import cityview
+import strutils
 
 let
   board = newImageHandle(("board", readImage("engboard.jpg")),200,100)
@@ -9,18 +10,32 @@ addMouseHandle(newMouseHandle(board))
 
 proc lineReadFile (filePath:string): seq[string] =
   var 
+    nr = 1
     text = open(filePath,fmRead)
+
   while not endOfFile(text):
-    result.add(text.readLine)
+    result.add(text.readLine&" Nr. "&nr.intToStr)
+    inc nr
   close(text)
 
 var
   squares = lineReadFile("dat\\board.txt")
 
-echo squares
+echo squares,": ",squares.len
 
-func toRect(x,y,w,h:int): Rect =
-  rect(vec2(x.toFloat,y.toFloat),vec2(w.toFloat,h.toFloat))
+proc makeAreas(): array[1..60,Area] =
+  for i in 0..17:
+    result[37+i] = (420+(i*43),170,35,100)
+    result[7+i] = (420+(i*43),790,35,100)
+    if i < 12:
+      result[25+i] = (270,272+(i*43),100,35)
+      if i < 6:
+        result[55+i] = (1230,272+(i*43),100,35)
+      else:
+        result[1+(i-6)] = (1230,272+(i*43),100,35)
+
+var
+  areas = makeAreas()
 
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
@@ -33,12 +48,8 @@ proc mouse (m:MouseEvent) =
 
 proc draw (b:var Boxy) =
   b.drawImage("board",vec2(200, 100))
-  for i in 0..17:
-    b.drawRect(toRect(420+(i*43),170,35,100),selColor)
-    b.drawRect(toRect(420+(i*43),790,35,100),selColor)
-  for i in 0..11:
-    b.drawRect(toRect(270,272+(i*43),100,35),selColor)
-    b.drawRect(toRect(1230,272+(i*43),100,35),selColor)
+  for area in areas:
+    b.drawRect(area.toRect(),selColor)
 
 proc initCityBoard*() =
   addCall(newCall("board",keyboard,mouse,draw))

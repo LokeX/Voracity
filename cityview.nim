@@ -182,6 +182,14 @@ proc newImageHandle*(img:ImageName,x,y:int): ImageHandle =
     area:(x,y,img.image.width,img.image.height)
   )
 
+func toRect*(x,y,w,h:int): Rect =
+  rect(vec2(x.toFloat,y.toFloat),vec2(w.toFloat,h.toFloat))
+
+func toRect*(area:Area): Rect =
+  let
+    (x,y,w,h) = area
+  rect(vec2(x.toFloat,y.toFloat),vec2(w.toFloat,h.toFloat))
+
 proc newAreaHandle*(name:string,x,y,w,h:int): AreaHandle =
   AreaHandle(name:name,area:(x,y,w,h))
  
