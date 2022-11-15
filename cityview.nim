@@ -54,7 +54,7 @@ let
   scrHeight* = cast[int32](scr.bottom)
   winWidth* = scrWidth-(scrWidth div 20)
   winHeight* = scrHeight-(scrHeight div 8)
-  boxyScale*: float = 1+(1-(1024/scrWidth))
+  boxyScale*: float = 0.75+(1-(1024/scrWidth))
 #  boxyScale*: float = 1
 
 window.size = ivec2(winWidth,winHeight)
