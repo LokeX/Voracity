@@ -28,11 +28,11 @@ addMouseHandle(newMouseHandle(board))
 
 proc squareNames (filePath:string): seq[string] =
   var 
-    nr = 1
+    nr = 0
     text = open(filePath,fmRead)
   while not endOfFile(text):
-    result.add(text.readLine&" Nr. "&nr.intToStr)
     inc nr
+    result.add(text.readLine&" Nr. "&nr.intToStr)
   close(text)
 
 func zipToAreaHandles(names:seq[string],areas:openArray[Area]): array[1..60,AreaHandle] =

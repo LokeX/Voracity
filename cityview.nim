@@ -54,8 +54,8 @@ let
   scrHeight* = cast[int32](scr.bottom)
   winWidth* = scrWidth-(scrWidth div 20)
   winHeight* = scrHeight-(scrHeight div 8)
-  boxyScale*: float = 0.75+(1-(1024/scrWidth))
-#  boxyScale*: float = 1
+  boxyScale*: float = (if scrWidth < 1440: 1 else: 2)-(1440/scrWidth)
+echo "Scale: ",boxyScale
 
 window.size = ivec2(winWidth,winHeight)
 window.pos = ivec2(110,110)
@@ -195,7 +195,10 @@ proc newAreaHandle*(name:string,x,y,w,h:int): AreaHandle =
  
 proc newAreaHandle*(ah:tuple[name:string,area:Area]): AreaHandle =
   AreaHandle(name:ah.name,area:ah.area)
- 
+
+proc newAreaHandle*(x,y:int,ni:NamedImage): AreaHandle =
+  newAreaHandle(ni.img.name,x,y,ni.img.image.width,ni.img.image.height)
+
 proc loadImages(files:seq[FileName]): seq[ImageName] =
   for file in files:
     result.add (file.name,readImage(file.path))
