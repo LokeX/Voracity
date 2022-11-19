@@ -74,11 +74,16 @@ var
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
   players:array[0..5,Player]
 
+proc nextPlayer(): int =
+  result = turn.player.nr+1
+  while result < 6 and players[result].kind == none:
+    inc result
+
 proc nextPlayerTurn() =
   if turn == nil:
     turn = Turn(nr:1,player:players[0])
-  elif turn.player.nr < 5:
-    turn = Turn(nr:turn.nr,player:players[turn.player.nr+1])
+  elif nextPlayer() < 6:
+    turn = Turn(nr:turn.nr,player:players[nextPlayer()])
   else:
     turn = Turn(nr:turn.nr+1,player:players[0])
 
