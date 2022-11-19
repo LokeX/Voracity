@@ -1,0 +1,53 @@
+When should a removed piece not be placed on the board even if you can afford to?
+	When it is your only removed piece AND
+	- when the value of the most valuable vacant green or yellow field is less than - say 5.000?
+
+removing colored piece at arrived field
+
+what is the (single turn) value of removing your own piece?
+
+	how many of your pieces are removed already?
+		How many of these can you afford to place on the board?
+
+	a piece has no value when you can't afford to place it on the board 
+		else 
+	removed pieces has the value of the most valuable vacant green or yellow field - 5.000
+
+what is the (single turn) value of removing competitors piece?
+
+is it valuable for you and is it detrimental for your competitor are two separete questions 
+
+what is the value (bodyguard value) of your piece not being alone on a field?
+	(bodyguard base value) = value of occupied field minus value of having it removed
+		what is the likelihood of your piece needing a bodyguard?
+		# of competing pieces 1-6 fields behind +
+		green field 1-6 fields behind times # of competitors +
+		yellow field 1-6 fields behind times # of competitors 
+	(bodyguard value) = (bodyguard base value) times likelihood 
+
+[what is the value (escorte value) of your piece not being alone on a field?]
+
+how valuable (possibly detrimantal) is it for you to be detrimantal (possibly valuable) to your competitor?
+	zero sum value = (estimated value for your competitor) times -1
+		If more than 2 players
+		of no relevance unless both the competitor in question and your self are serious competitors 
+			how to determine if a player is a serious competitor?
+				compare wealth between player in question and wealth of the leading player
+				a serious competitor have a difference in wealth less than - say 80.000 
+			zero sum value = zero sum value / # your serious competitors
+
+	what is the estimated value of the piece in question? 
+			value of current field occupied + 5.000 
+				permanent field value
+				possible plan(s) 
+					+5.000 per turn (max 5 counted)
+				[deeds]
+				[red cards]
+					
+			vacant green or yellow field occupied
+				permanent field value
+				possible plan 
+					nothing here yet
+				[deeds]
+				[red cards]
+

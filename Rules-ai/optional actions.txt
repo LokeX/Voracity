@@ -1,0 +1,46 @@
+short List of optional actions:
+	execution of blue cards
+	returning piece (to the board)
+	use of field functions:
+		drawing a blue card (if occupying a blue field)
+		moving to a yellow field (if occupying a green field)
+
+short order of optional actions:
+	when ever an optional action is taken return to start of order
+0) IF more than 3 blue cards are held calculate their practical value 
+1) execution of blue cards
+	all score cards are executed ASAP except (1 + X)
+		1 + X should also be executed ASAP unless X = 0 OR pay cards are worth executing first
+			1 + X should be executed even when X = 0 if alternative is to discard 1 + X OR
+			- IF execution crosses the finish line
+2) drawing a blue card except when
+	A) dice are unrolled AND chance of executing score card AND high propabillity of drawing (Deja vu)
+	B) high value of all blue fields occupied AND high propabillity of drawing (Blood lust/Busted/Go fishing)
+3) returning piece (to the board)
+4) moving to a yellow field from a green field
+	done before rolling dice OR IF required to execute a score card
+
+
+
+
+long List of optional actions:
+	[detonation of bombs]
+	execution of blue cards
+	returning piece (to the board)
+	[execution of red cards]
+	[selling of deeds]
+	[selling of media shares]
+	use of field functions:
+		[stealing a bomb (if occupying field #6)]
+		[playing casino (if occupying field #12)]
+		[buying a deed (if occupying field #22)]
+		[buying a bomb (if occupying field #30)]
+		[selling a bomb (if occupying field #57)]
+		[moving a white piece (if occupying field #60)]
+		[buying a media share (if occupying a red field)]
+		[buying a deed (if occupying a red field and a field for sale)]
+		[moving to a green field (if occupying a yellow field) red card]
+		[moving to field #6 (if occupying field #36) red card]
+		moving to a yellow field (if occupying a green field)
+		drawing a blue card (if occupying a blue field)
+

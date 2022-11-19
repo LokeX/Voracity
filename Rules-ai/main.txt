@@ -1,0 +1,27 @@
+Which version (simplified/expert)? 
+What level of difficulty (1,2,3)?
+
+How many participants?
+Who are they (PC/man)?
+How are they colored?
+Whos turn is it?
+
+What is the layout?
+	positions of all colored pieces 
+	[positions of white pieces] 
+
+	all blue cards (amount)
+	identity of own blue cards
+	[identity of others blue cards (via snitch)]
+	identity of discarded blue cards
+		ask later - identity of possibly blue cards held by others
+		ask later - propability of blue cards being held by others
+
+	[ownership of deeds]
+	[ownership of media shares]
+	[ownership of bombs]
+
+	[identity of own red cards]
+	[identity of others red cards (via internet)]
+	[identity of discarded red cards]
+		ask later - [identity of possibly red cards held by others]

@@ -1,0 +1,51 @@
+blue cards:
+ 
+(events) are (usually) not held but effectuated immediately
+(pay cards) moves pieces in special ways
+(score cards) ascribes nominal values to fields (usually for one piece in range only)
+	1 field - 1 piece		
+		nominal value added to field (unique field = 20.000, quintet = 10.000)
+	2 fields - 1 piece on each	
+		nominal value added to field (unique field = 20.000, quintet = 10.000)
+			when a field is occupied its nominal value is added to the remaining field
+to the remaining field
+	2 fields - 2 pieces on each 	
+		nominal value added twice to each field (unique field = 37.500)
+			when a field is occupied its nominal value is added to the remaining fields
+	1 + X fields - 1 + X pieces	
+		nominal value added to field (unique field = 10.000, quintet = 25.000)
+
+if more than 3 blue cards are held calculate their practical value before any optional action OR rolling the dice 
+	simulate optional actions (based on nominal value of all blue cards held)
+	simulate all 6 dice rolls (based on nominal value of all blue cards held)
+		simulate optional actions (based on nominal value of all blue cards held)
+		simulate discarding of blue cards 
+			each blue card now has (percentage of keeping): 
+				0, 17, 33, 50, 67, 83 or 100 
+	practical value = nominal value * (percentage of keeping)
+		score cards now ascribes practical values to fields (ie 20.000 * 0,67 = 13.400)
+
+
+
+	simulate all dice rolls AND optional actions: 
+	(green field to yellow), dice moves, remove pieces, return pieces, execution of blue cards etc. 
+	list all end scenarios and determine for each card the (choice) percentage of it being amongst 
+	- the 3 most valuable cards OR cards effectuated 
+	practical value of each card = (choice) percentage * nominal value of each card
+
+
+when no more moves are possible or increases
+
+if more than 3 blue cards are held and now some must be discarded
+	
+
+
+how likely that each card won't be discarded at end of turn
+		
+			percentage likelihood of keeping (or effectuating) the card is transferred to score card values
+			- value of pay cards to be determined later
+
+the full value of a blue card is usually divided by a number of fields involved
+
+
+ 

@@ -1,0 +1,52 @@
+moving to a yellow field (if occupying a green field)
+[moving to a green field (if occupying a yellow field) red card]
+[moving to field #6 (if occupying field #36) red card]
+moving own piece [or a white piece] via dice roll
+	removing colored piece at arrived field
+moving own piece via blue card
+	removing colored piece at arrived field
+[moving white piece via dice roll]
+[moving white piece via red card]
+[moving colored piece(s) via red card]
+	removing colored piece at arrived field
+
+each field is ascribed a practical value depending on
+	[field functions]
+	[earnings via deeds owned]
+	[earnings via deeds almost owned (½ value if only missing a red field)]
+	other piece present (value in safety) OR (single turn value in removing it)
+	[white piece present (½ value of safety)]
+	[white piece lurking 
+		what is the value compared to that of field #36? 
+		what is your competitor ranking?
+	[red cards] (single turn value OR value divided by # of competitors)
+	blue cards (score cards)
+
+moving to a yellow field (if occupying a green field)
+[moving to a green field (if occupying a yellow field) red card]
+moving own piece [or a white piece] via dice roll
+	removing colored piece at arrived field
+moving own piece via blue card
+	removing colored piece at arrived field
+[moving white piece via dice roll]
+[moving white piece via red card]
+[moving colored piece(s) via red card]
+	removing colored piece at arrived field
+
+all fields of the board are ascribed a value (possibly an amalgam of values) 
+- but these values are only of value to a player if they are on touch or sight of that players pieces
+- these values  declines over distance by a certain percentage
+
+field	value 	
+green 	1.000	
+blue	1 = 4.000, 2 = 2 * 2.500, 3 = 3 * 2.000, 4 = 4 * 1.500, 5 = 5 * 1.000
+
+distance (in fields):	percentage:
+	0		100
+	1-6		50/30 (only the most valuable 1,2,3,4,5 & 6 gets 50 %)
+	7		25
+	8		24
+	9		22
+	10		20
+	11		18
+	12		15

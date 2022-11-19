@@ -1,0 +1,39 @@
+[drawing of red cards]
+	[execution of direct red cards]
+optional actions (loop until exhausted)
+rolling the dice
+	moving a piece [possibly a white piece]
+		[possibly jailing of a number of pieces]
+		possible removal of a colored single piece 
+optional actions (loop until exhausted)
+[forced execution of red cards]
+discarding of blue cards
+
+
+List of optional actions:
+	[detonation of bombs]
+	execution of blue cards
+	returning piece (to the board)
+	[execution of red cards]
+	[selling of deeds]
+	[selling of media shares]
+	use of field functions:
+		[stealing a bomb (if occupying field #6)]
+		[playing casino (if occupying field #12)]
+		[buying a deed (if occupying field #22)]
+		[buying a bomb (if occupying field #30)]
+		[selling a bomb (if occupying field #57)]
+		[moving a white piece (if occupying field #60)]
+		[buying a media share (if occupying a red field)]
+		[buying a deed (if occupying a red field and a field for sale)]
+		[moving to a green field (if occupying a yellow field) red card]
+		[moving to field #6 (if occupying field #36) red card]
+		moving to a yellow field (if occupying a green field)
+		drawing a blue card (if occupying a blue field)
+
+short List of optional actions:
+	execution of blue cards
+	returning piece (to the board)
+	use of field functions:
+		drawing a blue card (if occupying a blue field)
+		moving to a yellow field (if occupying a green field)
