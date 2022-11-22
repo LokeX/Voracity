@@ -18,7 +18,7 @@ addMouseHandle(newMouseHandle(dieFace2))
 randomize()
 
 var
-  dice:array[1..2,int] = [3,4]
+  dice*:array[1..2,int] = [3,4]
   dieRollFrame = maxRollFrames
 
 proc mouseOnDice(): bool =

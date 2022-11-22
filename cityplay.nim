@@ -1,8 +1,10 @@
 import cityview
 import citytext
+import citydice
 import strutils
 import sequtils
 import random
+import sugar
 
 type
   PlayerKind = enum
@@ -21,6 +23,10 @@ type
     diceCast:bool
     pieceMoved:bool
     undrawnCards:int
+  Square = tuple
+    evals:seq[tuple[evalDesc:string,eval:int]]
+    nrOfPlayerPieces:array[6,int]
+  Board = array[1..60,Square]
 
 const
   sqOff = 43
@@ -40,10 +46,10 @@ const
   bars = [1,16,18,20,28,35,40,46,51,54]
 
 let
-  board = newImageHandle(("board", readImage("engboard.jpg")),bx,by)
+  boardImage = newImageHandle(("board", readImage("engboard.jpg")),bx,by)
 
-addImage(board)
-addMouseHandle(newMouseHandle(board))
+addImage(boardImage)
+addMouseHandle(newMouseHandle(boardImage))
 
 proc squareNames (filePath:string): seq[string] =
   var 
@@ -73,6 +79,40 @@ var
   turn:Turn = nil
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
   players:array[0..5,Player]
+  board:Board
+  moveSquares:seq[int]
+
+proc printPlayers() =
+  for player in players:
+    echo "player"
+    echo player.nr
+    echo player.color
+    echo player.kind
+    echo player.piecesOnSquares
+    echo player.cash
+
+proc printBoard() =
+  for i in 1..60:
+    echo i,": ",board[i]
+
+func piecesOnSquare(player:Player,square:int): int =
+  if player.kind != none:
+    player.piecesOnSquares.count(square)
+  else:
+    return 0
+
+proc playersPiecesOnSquare(square:int): array[6,int] =
+  for i,player in players:
+    result[i] = player.piecesOnSquare(square)
+
+proc nrOfPiecesOnSquare(square:int): int =
+  playersPiecesOnSquare(square).sum
+
+proc putPiecesOnBoard(): Board =
+  for player in players:
+    if player.kind != none:
+      for square in player.piecesOnSquares:
+        inc result[square].nrOfPlayerPieces[player.nr]
 
 proc nextPlayer(): int =
   result = turn.player.nr+1
@@ -91,6 +131,13 @@ proc mouseOnSquareNr(): int =
   for i,square in squares:
     if mouseOn() == square.name:
       return i
+
+proc moveablePieceOnSquare(square:int): bool =
+  turn
+  .player
+  .piecesOnSquares
+  .filter(p => p != 0)
+  .any(p => p == square)
 
 proc initAreaHandles() =
   for areaHandle in squares:
@@ -112,7 +159,6 @@ proc newPlayers() =
       piecesOnSquares:highways,
       cash:250000
     )
-#    players[color.ord] = Player(color:color,kind:human,piecesOnSquares:highways,cash:250000)
 
 proc pieceOn(player:Player,squareNr:int): Area =
   var
@@ -122,7 +168,20 @@ proc pieceOn(player:Player,squareNr:int): Area =
   else:
     result = (x+6+(player.color.ord*15),y+5,12,h-10)
 
-proc playerColor(color:PlayerColors): Color = playerColors[color]
+func movePiece(fromSquare:int,die:int): int =
+  result = fromSquare+die
+  if result > 60: result -= 60
+
+proc moveToSquares(fromSquare:int): seq[int] =
+  if fromSquare > 0 and fromSquare <= 60:
+    if fromSquare in highways: result.add(gasStations)
+    for die in dice:
+      result.add(movePiece(fromSquare,die))
+      result.add(gasStations.map(gasStation => movePiece(gasStation,die)))
+  else:
+    return @[]
+
+proc getColor(player:Player): Color = playerColors[player.color]
 
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
@@ -130,20 +189,38 @@ proc keyboard (k:KeyEvent) =
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
-    if mouseOn(board):
-      playSound("carstart-1")
-
+    if m.button == MouseRight:
+      moveSquares = @[]
+    elif moveSquares.len == 0:
+      var clickedSquareNr = mouseOnSquareNr()
+      if moveablePieceOnSquare(clickedSquareNr):
+        moveSquares = moveToSquares(clickedSquareNr)
+        echo moveSquares
+        playSound("carstart-1")
+      
 proc draw (b:var Boxy) =
   b.drawImage("board",vec2(200, 100))
   b.drawText("text1",400,25,
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr)
   )
+  for moveSquare in moveSquares:
+    b.drawRect(squares[moveSquare].area.toRect,selColor)
   for player in players:
     for square in player.piecesOnSquares:
-      b.drawRect(player.pieceOn(square).toRect,player.color.playerColor)
+      b.drawRect(player.pieceOn(square).toRect,player.getColor)
 
 proc initCityPlay*() =
   initAreaHandles()
   newPlayers()
+  printPlayers()
+  board = putPiecesOnBoard()
+  for highway in highways:
+    echo highway,": ",players[0].piecesOnSquare(highway)
+    echo highway,": ",playersPiecesOnSquare(highway)
+    echo highway,": ",nrOfPiecesOnSquare(highway)
+  printBoard()
   nextPlayerTurn()
+  echo "Turn:"
+  echo "nr: ",turn.nr
+  echo "player nr: ",turn.player.nr
   addCall(newCall("cityplay",keyboard,mouse,draw))
