@@ -15,6 +15,7 @@ type
     nr:int
     color:PlayerColors
     kind:PlayerKind
+    batch:AreaHandle
     piecesOnSquares:array[5,int]
     cash:int
   Turn = ref object
@@ -30,7 +31,7 @@ type
 
 const
   sqOff = 43
-  (bx,by) = (200,100)
+  (bx,by) = (200,150)
   (tbxo,lryo) = (220,172)
   (tyo,byo) = (70,690)
   (lxo,rxo) = (70,1030)
@@ -78,9 +79,19 @@ func squareAreas(): array[1..60,Area] =
 var
   turn:Turn = nil
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
-  players:array[0..5,Player]
+  players:array[1..6,Player]
+  playerBatches:array[1..6,AreaHandle]
   board:Board
   moveSquares:seq[int]
+  moveFromSquare:int
+
+proc newPlayerBatches(): array[1..6,AreaHandle] =
+  for index in 1..6:
+    result[index] = newAreaHandle(
+      "playerbatch"&index.intToStr,
+      15+bx+((index-1)*200),25,170,100
+    )
+    addMouseHandle(newMouseHandle(result[index]))
 
 proc printPlayers() =
   for player in players:
@@ -101,7 +112,7 @@ func piecesOnSquare(player:Player,square:int): int =
   else:
     return 0
 
-proc playersPiecesOnSquare(square:int): array[6,int] =
+proc playersPiecesOnSquare(square:int): array[1..6,int] =
   for i,player in players:
     result[i] = player.piecesOnSquare(square)
 
@@ -121,11 +132,11 @@ proc nextPlayer(): int =
 
 proc nextPlayerTurn() =
   if turn == nil:
-    turn = Turn(nr:1,player:players[0])
+    turn = Turn(nr:1,player:players[1])
   elif nextPlayer() < 6:
     turn = Turn(nr:turn.nr,player:players[nextPlayer()])
   else:
-    turn = Turn(nr:turn.nr+1,player:players[0])
+    turn = Turn(nr:turn.nr+1,player:players[1])
 
 proc mouseOnSquareNr(): int =
   for i,square in squares:
@@ -143,16 +154,13 @@ proc initAreaHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
 
-proc newPlayers() =
+proc newPlayers(): array[6,Player] =
   randomize()
-  var 
-    playerOrder = [-1,-1,-1,-1,-1,-1]
-    randomPosition = rand(0..5)
+  var randomPosition = rand(0..5)
   for color in PlayerColors:
-    while (playerOrder[randomPosition] != -1): 
+    while result[randomPosition] != nil: 
       randomPosition = rand(0..5)
-    playerOrder[randomPosition] = 0
-    players[randomPosition] = Player(
+    result[randomPosition] = Player(
       nr:randomPosition,
       color:color,
       kind:human,
@@ -168,18 +176,25 @@ proc pieceOn(player:Player,squareNr:int): Area =
   else:
     result = (x+6+(player.color.ord*15),y+5,12,h-10)
 
-func movePiece(fromSquare:int,die:int): int =
+func moveToSquare(fromSquare:int,die:int): int =
   result = fromSquare+die
   if result > 60: result -= 60
 
-proc moveToSquares(fromSquare:int): seq[int] =
+proc moveToSquares(fromSquare:int,dice:array[2,int]): seq[int] =
   if fromSquare > 0 and fromSquare <= 60:
     if fromSquare in highways: result.add(gasStations)
     for die in dice:
-      result.add(movePiece(fromSquare,die))
-      result.add(gasStations.map(gasStation => movePiece(gasStation,die)))
+      result.add(moveToSquare(fromSquare,die))
+      if fromSquare in highways:
+        result.add(gasStations.map(gasStation => moveToSquare(gasStation,die)))
   else:
     return @[]
+
+proc moveToSquares(fromSquare:int): seq[int] = moveToSquares(fromSquare,dice)
+
+proc movePiece(fromSquare,toSquare:int) =
+  var pieceNr = turn.player.piecesOnSquares.find(fromSquare)
+  if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
 proc getColor(player:Player): Color = playerColors[player.color]
 
@@ -192,17 +207,33 @@ proc mouse (m:MouseEvent) =
     if m.button == MouseRight:
       moveSquares = @[]
     elif moveSquares.len == 0:
-      var clickedSquareNr = mouseOnSquareNr()
-      if moveablePieceOnSquare(clickedSquareNr):
-        moveSquares = moveToSquares(clickedSquareNr)
+      moveFromSquare = mouseOnSquareNr()
+      if moveablePieceOnSquare(moveFromSquare):
+        moveSquares = moveToSquares(moveFromSquare)
         echo moveSquares
         playSound("carstart-1")
-      
+    elif mouseOnSquareNr() in moveSquares:
+      movePiece(moveFromSquare,mouseOnSquareNr())
+      moveSquares = @[]
+      playSound("driveBy")
+
+proc drawBatch(b:var Boxy,player:Player,font:Font) =
+  b.drawText("test",1500,500,"This is the player number"&player.nr.intToStr,font)
+
 proc draw (b:var Boxy) =
-  b.drawImage("board",vec2(200, 100))
-  b.drawText("text1",400,25,
-    "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr)
+  b.drawBatch(turn.player,point40White)
+  b.drawImage("board",vec2(bx.toFloat,by.toFloat))
+  b.drawText("text1",1500,50,"This is font: cabalB20Black",cabalB20Black)
+  b.drawText("text2",1500,100,"This is font: cabal30White",cabal30White)
+  b.drawText("text3",1500,150,"This is font: confes40Black",confes40Black)
+  b.drawText("text4",1500,200,"This is font: aovel30White",aovel30White)
+  b.drawText("text5",800,1025,mouseOn(),aovel60White)
+  b.drawText("text6",400,1025,
+    "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
+    aovel60White
   )
+  for i,batch in playerBatches:
+    b.drawRect(batch.area.toRect,players[i].getColor)
   for moveSquare in moveSquares:
     b.drawRect(squares[moveSquare].area.toRect,selColor)
   for player in players:
@@ -211,11 +242,12 @@ proc draw (b:var Boxy) =
 
 proc initCityPlay*() =
   initAreaHandles()
-  newPlayers()
+  playerBatches = newPlayerBatches()
+  players = newPlayers()
   printPlayers()
   board = putPiecesOnBoard()
   for highway in highways:
-    echo highway,": ",players[0].piecesOnSquare(highway)
+    echo highway,": ",players[1].piecesOnSquare(highway)
     echo highway,": ",playersPiecesOnSquare(highway)
     echo highway,": ",nrOfPiecesOnSquare(highway)
   printBoard()

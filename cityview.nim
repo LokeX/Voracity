@@ -55,6 +55,7 @@ let
   winWidth* = scrWidth-(scrWidth div 20)
   winHeight* = scrHeight-(scrHeight div 8)
   boxyScale*: float = (if scrWidth < 1440: 1 else: 2)-(1440/scrWidth)
+#  boxyScale*: float = 1
 echo "Scale: ",boxyScale
 
 window.size = ivec2(winWidth,winHeight)
@@ -175,6 +176,11 @@ proc newMouseHandle*(ih:ImageHandle): MouseHandle =
 
 proc addMouseHandle*(mh:MouseHandle) =
   mouseHandles.add(mh)
+
+proc removeMouseHandle*(name:string) =
+  for i,handle in mouseHandles:
+    if handle.name == name:
+      mouseHandles.delete(i)
 
 proc newImageHandle*(img:ImageName,x,y:int): ImageHandle =
   ImageHandle(
