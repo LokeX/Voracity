@@ -1,11 +1,10 @@
 import cityview
-import citytext
 import citydice
 import cityplay
 import os
 
 let
-  bg = ("bg", readImage("bggreen.png"))
+  bg = ("bg", readImage("pics\\bggreen.png"))
 
 addImage(bg)
 

@@ -47,7 +47,7 @@ const
   bars = [1,16,18,20,28,35,40,46,51,54]
 
 let
-  boardImage = newImageHandle(("board", readImage("engboard.jpg")),bx,by)
+  boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
 
 addImage(boardImage)
 addMouseHandle(newMouseHandle(boardImage))
