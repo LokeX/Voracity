@@ -21,7 +21,7 @@ type
   Turn = ref object
     nr:int
     player:Player
-    diceCast:bool
+    diceMoved:bool
     pieceMoved:bool
     undrawnCards:int
   Square = tuple
@@ -85,6 +85,17 @@ var
   moveSquares:seq[int]
   moveFromSquare:int
 
+let
+  roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
+  playerFonts = [
+    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(1,1,1)),
+  ]
+
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
     result[index] = newAreaHandle(
@@ -92,6 +103,13 @@ proc newPlayerBatches(): array[1..6,AreaHandle] =
       15+bx+((index-1)*200),25,170,100
     )
     addMouseHandle(newMouseHandle(result[index]))
+
+proc wirePlayerBatches() =
+  var count = 1
+  for player in players:
+    if player.kind != none:
+      player.batch = playerBatches[count]
+      inc count
 
 proc printPlayers() =
   for player in players:
@@ -143,18 +161,23 @@ proc mouseOnSquareNr(): int =
     if mouseOn() == square.name:
       return i
 
-proc moveablePieceOnSquare(square:int): bool =
-  turn
-  .player
-  .piecesOnSquares
+proc turnPlayerHasPieceOn(square:int): bool =
+  turn.player.piecesOnSquares
   .filter(p => p != 0)
   .any(p => p == square)
 
-proc initAreaHandles() =
+proc hasLegalMove(square:int): bool =
+  square in highways or not turn.diceMoved
+
+proc moveablePieceOn(square:int): bool =
+  turnPlayerHasPieceOn(square) and 
+  hasLegalMove(square)
+
+proc initSquareHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
 
-proc newPlayers(): array[6,Player] =
+proc newPlayers(kind:array[6,PlayerKind]): array[6,Player] =
   randomize()
   var randomPosition = rand(0..5)
   for color in PlayerColors:
@@ -163,7 +186,7 @@ proc newPlayers(): array[6,Player] =
     result[randomPosition] = Player(
       nr:randomPosition,
       color:color,
-      kind:human,
+      kind:kind[color.ord],
       piecesOnSquares:highways,
       cash:250000
     )
@@ -204,36 +227,46 @@ proc keyboard (k:KeyEvent) =
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
+    var clickedSquareNr = mouseOnSquareNr()
     if m.button == MouseRight:
       moveSquares = @[]
     elif moveSquares.len == 0:
-      moveFromSquare = mouseOnSquareNr()
-      if moveablePieceOnSquare(moveFromSquare):
+      moveFromSquare = clickedSquareNr
+      if moveablePieceOn(moveFromSquare):
         moveSquares = moveToSquares(moveFromSquare)
-        echo moveSquares
         playSound("carstart-1")
-    elif mouseOnSquareNr() in moveSquares:
-      movePiece(moveFromSquare,mouseOnSquareNr())
+    elif clickedSquareNr in moveSquares:
+      movePiece(moveFromSquare,clickedSquareNr)
+      if not turn.diceMoved:
+        turn.diceMoved = not (
+          clickedSquareNr in gasStations and 
+          moveFromSquare in highways
+        )
       moveSquares = @[]
       playSound("driveBy")
 
-proc drawBatch(b:var Boxy,player:Player,font:Font) =
-  b.drawText("test",1500,500,"This is the player number"&player.nr.intToStr,font)
+proc shadowArea(a:Area): Area = (a.x+5,a.y+5,a.w,a.h)
+
+proc drawBatch(b:var Boxy,player:Player) =
+  b.drawRect(shadowArea(player.batch.area).toRect,color(255,255,255,150))
+  b.drawRect(player.batch.area.toRect,player.getColor)
 
 proc draw (b:var Boxy) =
-  b.drawBatch(turn.player,point40White)
   b.drawImage("board",vec2(bx.toFloat,by.toFloat))
   b.drawText("text1",1500,50,"This is font: cabalB20Black",cabalB20Black)
   b.drawText("text2",1500,100,"This is font: cabal30White",cabal30White)
   b.drawText("text3",1500,150,"This is font: confes40Black",confes40Black)
   b.drawText("text4",1500,200,"This is font: aovel30White",aovel30White)
-  b.drawText("text5",800,1025,mouseOn(),aovel60White)
-  b.drawText("text6",400,1025,
+  b.drawText("text5",1500,250,"This is font: roboto20White",roboto20White)
+  b.drawText("text6",1500,300,"This is font: ibm20White",ibm20White)
+  b.drawText("text7",800,1025,mouseOn(),aovel60White)
+  b.drawText("text8",400,1025,
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
     aovel60White
   )
-  for i,batch in playerBatches:
-    b.drawRect(batch.area.toRect,players[i].getColor)
+  for player in players:
+    if player.kind != none:
+      b.drawBatch(player)
   for moveSquare in moveSquares:
     b.drawRect(squares[moveSquare].area.toRect,selColor)
   for player in players:
@@ -241,9 +274,10 @@ proc draw (b:var Boxy) =
       b.drawRect(player.pieceOn(square).toRect,player.getColor)
 
 proc initCityPlay*() =
-  initAreaHandles()
+  initSquareHandles()
   playerBatches = newPlayerBatches()
-  players = newPlayers()
+  players = newPlayers([human,human,human,human,human,human])
+  wirePlayerBatches()
   printPlayers()
   board = putPiecesOnBoard()
   for highway in highways:

@@ -3,13 +3,13 @@ import cityview
 type
   TextImage* = tuple[globalBounds:Rect,textImage:Image]
 
-func fontFace(typeFace:Typeface,size:float32,color: Color): Font =
+func fontFace*(typeFace:Typeface,size:float32,color: Color): Font =
   result = newFont(typeFace)
   result.size = size
   result.paint = color
 
 proc font*(fontName:string, size:float32, color:Color): Font = 
-  result = fontFace(readTypeface("fonts\\"&fontName&".ttf"),size,color)
+  fontFace(readTypeface("fonts\\"&fontName&".ttf"),size,color)
 
 let 
   aovel60White* = font("AovelSansRounded-rdDL",60,color(1,1,1,1))
@@ -18,6 +18,8 @@ let
   cabal30White* = font("Cabal-w5j3",30,color(1,1,1,1))
   cabalB20Black* = font("CabalBold-78yP",20,color(255,255,255,1))
   confes40Black* = font("TheConfessionFullRegular-8qGz",40,color(255,255,255,1))
+  ibm20White* = font("IBMPlexMono-Bold",20,color(1,1,1,1))
+  roboto20White* = font("Roboto-Regular_1",20,color(1,1,1,1))
 
 func arrangement(text:string, tFont:Font, winSize:Vec2): Arrangement =
   result = typeset(@[newSpan(text, tFont)], bounds = winSize)

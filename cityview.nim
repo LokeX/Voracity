@@ -54,8 +54,8 @@ let
   scrHeight* = cast[int32](scr.bottom)
   winWidth* = scrWidth-(scrWidth div 20)
   winHeight* = scrHeight-(scrHeight div 8)
-  boxyScale*: float = (if scrWidth < 1440: 1 else: 2)-(1440/scrWidth)
-#  boxyScale*: float = 1
+#  boxyScale*: float = (if scrWidth < 1440: 1 else: 2)-(1440/scrWidth)
+  boxyScale*: float = 1
 echo "Scale: ",boxyScale
 
 window.size = ivec2(winWidth,winHeight)
