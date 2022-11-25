@@ -87,13 +87,13 @@ var
 
 let
   roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
-  playerFonts = [
+  playerFonts:array[PlayerColors,Font] = [
     fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(255,255,255)),
     fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(255,255,255)),
     fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(1,1,1)),
+    fontFace(roboto,20,color(255,255,255)),
   ]
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
@@ -191,6 +191,14 @@ proc newPlayers(kind:array[6,PlayerKind]): array[6,Player] =
       cash:250000
     )
 
+proc showFonts(b:var Boxy) =
+  b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
+  b.drawText("font2",1500,100,"This is font: cabal30White",cabal30White)
+  b.drawText("font3",1500,150,"This is font: confes40Black",confes40Black)
+  b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
+  b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
+  b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
+
 proc pieceOn(player:Player,squareNr:int): Area =
   var
     (x,y,w,h) = squares[squareNr].area
@@ -221,6 +229,29 @@ proc movePiece(fromSquare,toSquare:int) =
 
 proc getColor(player:Player): Color = playerColors[player.color]
 
+func offsetArea(a:Area,offset:int): Area = (a.x+offset,a.y+offset,a.w,a.h)
+
+proc drawBatchText(b:var Boxy,player:Player) =
+  let
+    offset = offsetArea(player.batch.area,5)    
+    lines = [
+      "Turn: "&turn.nr.intToStr,
+      "Cash: "&player.cash.intToStr
+    ]
+  for i,line in lines:
+    b.drawText(
+      "batch"&player.nr.intToStr&i.intToStr,
+      offset.x.toFloat,
+      offset.y.toFloat+(i.toFloat*20),
+      line,
+      playerFonts[player.color]
+    )
+
+proc drawBatch(b:var Boxy,player:Player) =
+  let offset = offsetArea(player.batch.area,5)
+  b.drawRect(offset.toRect,color(255,255,255,150))
+  b.drawRect(player.batch.area.toRect,player.getColor)
+
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
@@ -245,20 +276,8 @@ proc mouse (m:MouseEvent) =
       moveSquares = @[]
       playSound("driveBy")
 
-proc shadowArea(a:Area): Area = (a.x+5,a.y+5,a.w,a.h)
-
-proc drawBatch(b:var Boxy,player:Player) =
-  b.drawRect(shadowArea(player.batch.area).toRect,color(255,255,255,150))
-  b.drawRect(player.batch.area.toRect,player.getColor)
-
 proc draw (b:var Boxy) =
   b.drawImage("board",vec2(bx.toFloat,by.toFloat))
-  b.drawText("text1",1500,50,"This is font: cabalB20Black",cabalB20Black)
-  b.drawText("text2",1500,100,"This is font: cabal30White",cabal30White)
-  b.drawText("text3",1500,150,"This is font: confes40Black",confes40Black)
-  b.drawText("text4",1500,200,"This is font: aovel30White",aovel30White)
-  b.drawText("text5",1500,250,"This is font: roboto20White",roboto20White)
-  b.drawText("text6",1500,300,"This is font: ibm20White",ibm20White)
   b.drawText("text7",800,1025,mouseOn(),aovel60White)
   b.drawText("text8",400,1025,
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
@@ -267,6 +286,7 @@ proc draw (b:var Boxy) =
   for player in players:
     if player.kind != none:
       b.drawBatch(player)
+      b.drawBatchText(player)
   for moveSquare in moveSquares:
     b.drawRect(squares[moveSquare].area.toRect,selColor)
   for player in players:
