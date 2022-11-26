@@ -3,12 +3,16 @@ import citytext
 import citydice
 import strutils
 import sequtils
+import times
 import random
 import sugar
+import os
 
 type
   PlayerKind = enum
-    human,computer,none
+    human = "Human",
+    computer = "Computer",
+    none = "None"
   PlayerColors = enum
     red,green,blue,yellow,black,white
   Player = ref object
@@ -16,6 +20,7 @@ type
     color:PlayerColors
     kind:PlayerKind
     batch:AreaHandle
+    turnNr:int
     piecesOnSquares:array[5,int]
     cash:int
   Turn = ref object
@@ -37,20 +42,27 @@ const
   (lxo,rxo) = (70,1030)
 
   selColor = color(255,255,255,100)
+  defaultPlayerKinds = [human,human,human,human,human,human]
   playerColors:array[PlayerColors,Color] = [
     color(1,0,0),color(0,1,0),
     color(0,0,1),color(1,1,0),
     color(255,255,255),color(1,1,1)
+  ]
+  batchFontColors:array[PlayerColors,Color] = [
+    color(1,1,1),
+    color(255,255,255),
+    color(1,1,1),
+    color(255,255,255),
+    color(1,1,1),
+    color(255,255,255),
   ]
   highways = [5,17,29,41,53]
   gasStations = [2,15,27,37,47]
   bars = [1,16,18,20,28,35,40,46,51,54]
 
 let
+  roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
   boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
-
-addImage(boardImage)
-addMouseHandle(newMouseHandle(boardImage))
 
 proc squareNames (filePath:string): seq[string] =
   var 
@@ -80,21 +92,12 @@ var
   turn:Turn = nil
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
   players:array[1..6,Player]
+  playerKinds:array[1..6,PlayerKind]
   playerBatches:array[1..6,AreaHandle]
   board:Board
   moveSquares:seq[int]
   moveFromSquare:int
-
-let
-  roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
-  playerFonts:array[PlayerColors,Font] = [
-    fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(255,255,255)),
-    fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(255,255,255)),
-    fontFace(roboto,20,color(1,1,1)),
-    fontFace(roboto,20,color(255,255,255)),
-  ]
+  oldTime = cpuTime()
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -117,6 +120,7 @@ proc printPlayers() =
     echo player.nr
     echo player.color
     echo player.kind
+    echo player.batch.name
     echo player.piecesOnSquares
     echo player.cash
 
@@ -141,20 +145,29 @@ proc putPiecesOnBoard(): Board =
   for player in players:
     if player.kind != none:
       for square in player.piecesOnSquares:
-        inc result[square].nrOfPlayerPieces[player.nr]
+        inc result[square].nrOfPlayerPieces[player.nr-1]
 
-proc nextPlayer(): int =
-  result = turn.player.nr+1
-  while result < 6 and players[result].kind == none:
-    inc result
+proc contestingPlayersNrs(): seq[int] = 
+  players.filterIt(it.kind != none).mapIt(it.nr)
 
 proc nextPlayerTurn() =
+  let contesters = contestingPlayersNrs()
   if turn == nil:
-    turn = Turn(nr:1,player:players[1])
-  elif nextPlayer() < 6:
-    turn = Turn(nr:turn.nr,player:players[nextPlayer()])
+    turn = Turn(nr:1,player:players[contesters[0]])
   else:
-    turn = Turn(nr:turn.nr+1,player:players[1])
+    let lastContester = turn.player.nr == contesters[^1]
+    turn = Turn(
+      nr:if lastContester: turn.nr+1 else: turn.nr,
+      player:players[
+        if lastContester: 
+          contesters[0] 
+        else: 
+          contesters[
+            contesters.find(turn.player.nr)+1
+          ]
+      ]
+    )
+  turn.player.turnNr = turn.nr  
 
 proc mouseOnSquareNr(): int =
   for i,square in squares:
@@ -177,19 +190,30 @@ proc initSquareHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
 
-proc newPlayers(kind:array[6,PlayerKind]): array[6,Player] =
+proc newPlayers(kind:array[6,PlayerKind]): array[1..6,Player] =
   randomize()
-  var randomPosition = rand(0..5)
+  var randomPosition = rand(1..6)
   for color in PlayerColors:
     while result[randomPosition] != nil: 
-      randomPosition = rand(0..5)
+      randomPosition = rand(1..6)
     result[randomPosition] = Player(
       nr:randomPosition,
       color:color,
       kind:kind[color.ord],
       piecesOnSquares:highways,
-      cash:250000
+      cash:25000
     )
+
+proc newGame() =
+  players = newPlayers(playerKinds)
+  wirePlayerBatches()
+  for player in players: 
+    if player.kind != none:
+      echo player.nr
+      echo player.color
+      echo player.batch.name
+  board = putPiecesOnBoard()
+  nextPlayerTurn()
 
 proc showFonts(b:var Boxy) =
   b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
@@ -235,8 +259,8 @@ proc drawBatchText(b:var Boxy,player:Player) =
   let
     offset = offsetArea(player.batch.area,5)    
     lines = [
-      "Turn: "&turn.nr.intToStr,
-      "Cash: "&player.cash.intToStr
+      "Turn: "&player.turnNr.intToStr,
+      "Cash: "&player.cash.intToStr.insertSep(sep='.')
     ]
   for i,line in lines:
     b.drawText(
@@ -244,24 +268,60 @@ proc drawBatchText(b:var Boxy,player:Player) =
       offset.x.toFloat,
       offset.y.toFloat+(i.toFloat*20),
       line,
-      playerFonts[player.color]
+      fontFace(roboto,20,batchFontColors[player.color])
     )
 
+proc drawTurnCursor(b:var Boxy,player:Player) =
+  let (x,y,w,_) = player.batch.area
+  if player.nr == turn.player.nr:
+    let time = cpuTime() - oldTime
+    if time > 0 and time < 1:
+      b.drawRect((x+w-20,y+5,15,15).toRect,batchFontColors[player.color])
+    elif time >= 2:
+      oldTime = cpuTime()
+
 proc drawBatch(b:var Boxy,player:Player) =
-  let offset = offsetArea(player.batch.area,5)
-  b.drawRect(offset.toRect,color(255,255,255,150))
+  b.drawRect(offsetArea(player.batch.area,5).toRect,color(255,255,255,150))
   b.drawRect(player.batch.area.toRect,player.getColor)
 
-proc keyboard (k:KeyEvent) =
-  if k.button == ButtonUnknown:
-    echo "Rune: ",k.rune
+proc drawPlayerKind(b:var Boxy,player:Player) =
+  b.drawText(
+    "kind"&player.nr.intToStr,
+    (player.batch.area.x+35).toFloat,
+    (player.batch.area.y+30).toFloat,
+    $playerKinds[player.nr],
+    fontFace(roboto,30,batchFontColors[player.color])
+  )
 
-proc mouse (m:MouseEvent) =
-  if mouseClicked(m.keyState):
-    var clickedSquareNr = mouseOnSquareNr()
-    if m.button == MouseRight:
-      moveSquares = @[]
-    elif moveSquares.len == 0:
+proc mouseRightClicked() =
+  if moveSquares.len > 0: 
+    moveSquares = @[]
+  else:
+    playSound("carhorn-1")
+    oldTime = cpuTime()
+    if turn == nil:
+      newGame()
+    else:
+      nextPlayerTurn()
+
+proc togglePlayerKind(kind:PlayerKind): PlayerKind =
+  case kind
+    of human:computer
+    of computer:none
+    of none:human
+
+proc mouseOnPlayer(): Player = 
+  for player in players:
+    if player.batch != nil and player.batch.name == mouseOn():
+      return player
+
+proc mouseLeftClicked() =
+  if turn == nil:
+    let pl = mouseOnPlayer()
+    if pl != nil: playerKinds[pl.nr] = playerKinds[pl.nr].togglePlayerKind()
+  let clickedSquareNr = mouseOnSquareNr()
+  if clickedSquareNr > 0 and turn != nil:
+    if moveSquares.len == 0 or not (clickedSquareNr in moveSquares):
       moveFromSquare = clickedSquareNr
       if moveablePieceOn(moveFromSquare):
         moveSquares = moveToSquares(moveFromSquare)
@@ -276,37 +336,65 @@ proc mouse (m:MouseEvent) =
       moveSquares = @[]
       playSound("driveBy")
 
+proc keyboard (k:KeyEvent) =
+  if k.button == ButtonUnknown:
+    echo "Rune: ",k.rune
+
+proc mouse (m:MouseEvent) =
+  if mouseClicked(m.keyState):
+    if m.button == MouseRight:
+      mouseRightClicked()
+    else:
+      mouseLeftClicked()
+
 proc draw (b:var Boxy) =
+#  b.showFonts()
   b.drawImage("board",vec2(bx.toFloat,by.toFloat))
   b.drawText("text7",800,1025,mouseOn(),aovel60White)
+  b.drawText("text9",1400,1025,$(if mouseOnPlayer()!=nil:mouseOnPlayer() else:players[1]).color,aovel60White)
   b.drawText("text8",400,1025,
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
     aovel60White
   )
   for player in players:
-    if player.kind != none:
+    if player.kind != none or turn == nil:
       b.drawBatch(player)
-      b.drawBatchText(player)
+      if turn != nil:
+        b.drawBatchText(player)
+        b.drawTurnCursor(player)
+      else:
+        b.drawPlayerKind(player)
   for moveSquare in moveSquares:
     b.drawRect(squares[moveSquare].area.toRect,selColor)
-  for player in players:
-    for square in player.piecesOnSquares:
-      b.drawRect(player.pieceOn(square).toRect,player.getColor)
+  for i,player in players:
+    if (turn == nil and playerKinds[i] != none) or (turn != nil and player.kind != none):
+      for square in player.piecesOnSquares:
+        b.drawRect(player.pieceOn(square).toRect,player.getColor)
+
+proc newDefaultPlayers(): array[1..6,Player] =
+  for i in 1..6:
+    result[i] = Player(
+      nr:i,
+      kind:defaultPlayerKinds[i-1],
+      color:PlayerColors(i-1),
+      piecesOnSquares:highways
+    )
 
 proc initCityPlay*() =
+  addImage(boardImage)
+  addMouseHandle(newMouseHandle(boardImage))
   initSquareHandles()
   playerBatches = newPlayerBatches()
-  players = newPlayers([human,human,human,human,human,human])
+  players = newDefaultPlayers()
   wirePlayerBatches()
+  board = putPiecesOnBoard() 
+  addCall(newCall("cityplay",keyboard,mouse,draw))
+  
   printPlayers()
-  board = putPiecesOnBoard()
   for highway in highways:
     echo highway,": ",players[1].piecesOnSquare(highway)
     echo highway,": ",playersPiecesOnSquare(highway)
     echo highway,": ",nrOfPiecesOnSquare(highway)
   printBoard()
-  nextPlayerTurn()
-  echo "Turn:"
-  echo "nr: ",turn.nr
-  echo "player nr: ",turn.player.nr
-  addCall(newCall("cityplay",keyboard,mouse,draw))
+  echo PlayerColors(0)
+  

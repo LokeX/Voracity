@@ -27,5 +27,5 @@ echo "nr of recievers: ",calls.len()
 echo "nr of mouse handles:",mouseHandles.len()
 
 while not window.closeRequested:
-  sleep(15)
+  sleep(30)
   pollEvents()

@@ -247,7 +247,8 @@ window.onRune = proc(rune:Rune) =
     if call.keyboard != nil: 
       call.keyboard(newKeyEvent(button,rune))
 
-window.onMouseMove = proc () =
+#[ window.onMouseMove = proc () =
   for call in calls:
     if call.mouse != nil: 
       call.mouse(newMouseMoveEvent())
+ ]#

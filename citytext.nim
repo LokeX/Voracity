@@ -22,7 +22,7 @@ let
   roboto20White* = font("Roboto-Regular_1",20,color(1,1,1,1))
 
 func arrangement(text:string, tFont:Font, winSize:Vec2): Arrangement =
-  result = typeset(@[newSpan(text, tFont)], bounds = winSize)
+  typeset(@[newSpan(text, tFont)], bounds = winSize)
 
 proc imageText(arrangement:Arrangement,x,y:float32): TextImage =
   let
@@ -34,7 +34,7 @@ proc imageText(arrangement:Arrangement,x,y:float32): TextImage =
   result = (globalBounds,image)
 
 proc imageText*(text:string,x,y:float32,font:Font,winSize:Vec2): TextImage =
-  result = imageText(text.arrangement(font,winSize),x,y)
+  imageText(text.arrangement(font,winSize),x,y)
 
 proc drawText*(bx:var Boxy,imageKey:string,x,y:float32,text:string,font:Font) =
   let txt = text.imageText(x,y,font,winSize().vec2)
