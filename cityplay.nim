@@ -151,6 +151,15 @@ proc wirePlayerBatches() =
       player.batch = playerBatches[count]
       inc count
 
+proc newDefaultPlayers(): array[1..6,Player] =
+  for i in 1..6:
+    result[i] = Player(
+      nr:i,
+      kind:defaultPlayerKinds[i-1],
+      color:PlayerColors(i-1),
+      piecesOnSquares:highways
+    )
+
 proc printPlayers() =
   for player in players:
     echo "player"
@@ -161,22 +170,19 @@ proc printPlayers() =
     echo player.piecesOnSquares
     echo player.cash
 
-proc printBoard() =
-  for i in 1..60:
-    echo i,": ",board[i]
-
-func piecesOnSquare(player:Player,square:int): int =
-  if player.kind != none:
-    player.piecesOnSquares.count(square)
-  else:
-    return 0
-
-proc playersPiecesOnSquare(square:int): array[1..6,int] =
-  for i,player in players:
-    result[i] = player.piecesOnSquare(square)
-
-proc nrOfPiecesOnSquare(square:int): int =
-  playersPiecesOnSquare(square).sum
+proc newPlayers(kind:array[6,PlayerKind]): array[1..6,Player] =
+  randomize()
+  var randomPosition = rand(1..6)
+  for color in PlayerColors:
+    while result[randomPosition] != nil: 
+      randomPosition = rand(1..6)
+    result[randomPosition] = Player(
+      nr:randomPosition,
+      color:color,
+      kind:kind[color.ord],
+      piecesOnSquares:highways,
+      cash:25000
+    )
 
 proc putPiecesOnBoard(): Board =
   for player in players:
@@ -207,6 +213,29 @@ proc nextPlayerTurn() =
     )
   turn.player.turnNr = turn.nr  
 
+proc newGame() =
+  players = newPlayers(playerKinds)
+  wirePlayerBatches()
+  board = putPiecesOnBoard()
+  nextPlayerTurn()
+
+proc printBoard() =
+  for i in 1..60:
+    echo i,": ",board[i]
+
+func piecesOnSquare(player:Player,square:int): int =
+  if player.kind != none:
+    player.piecesOnSquares.count(square)
+  else:
+    return 0
+
+proc playersPiecesOnSquare(square:int): array[1..6,int] =
+  for i,player in players:
+    result[i] = player.piecesOnSquare(square)
+
+proc nrOfPiecesOnSquare(square:int): int =
+  playersPiecesOnSquare(square).sum
+
 proc mouseOnSquareNr(): int =
   for i,square in squares:
     if mouseOn() == square.name:
@@ -227,34 +256,6 @@ proc moveablePieceOn(square:int): bool =
 proc initSquareHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
-
-proc newPlayers(kind:array[6,PlayerKind]): array[1..6,Player] =
-  randomize()
-  var randomPosition = rand(1..6)
-  for color in PlayerColors:
-    while result[randomPosition] != nil: 
-      randomPosition = rand(1..6)
-    result[randomPosition] = Player(
-      nr:randomPosition,
-      color:color,
-      kind:kind[color.ord],
-      piecesOnSquares:highways,
-      cash:25000
-    )
-
-proc newGame() =
-  players = newPlayers(playerKinds)
-  wirePlayerBatches()
-  board = putPiecesOnBoard()
-  nextPlayerTurn()
-
-proc showFonts(b:var Boxy) =
-  b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
-  b.drawText("font2",1500,100,"This is font: cabal30White",cabal30White)
-  b.drawText("font3",1500,150,"This is font: confes40Black",confes40Black)
-  b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
-  b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
-  b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
 
 proc pieceOn(player:Player,squareNr:int): Area =
   var
@@ -285,6 +286,14 @@ proc movePiece(fromSquare,toSquare:int) =
   if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
 proc getColor(player:Player): Color = playerColors[player.color]
+
+proc showFonts(b:var Boxy) =
+  b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
+  b.drawText("font2",1500,100,"This is font: cabal30White",cabal30White)
+  b.drawText("font3",1500,150,"This is font: confes40Black",confes40Black)
+  b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
+  b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
+  b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
 
 func offsetArea(a:Area,offset:int): Area = (a.x+offset,a.y+offset,a.w,a.h)
 
@@ -419,15 +428,6 @@ proc draw (b:var Boxy) =
     if (turn == nil and playerKinds[i] != none) or (turn != nil and player.kind != none):
       for square in player.piecesOnSquares:
         b.drawRect(player.pieceOn(square).toRect,player.getColor)
-
-proc newDefaultPlayers(): array[1..6,Player] =
-  for i in 1..6:
-    result[i] = Player(
-      nr:i,
-      kind:defaultPlayerKinds[i-1],
-      color:PlayerColors(i-1),
-      piecesOnSquares:highways
-    )
 
 proc printReport() =
   printPlayers()
