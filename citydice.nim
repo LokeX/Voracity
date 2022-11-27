@@ -1,4 +1,4 @@
-import cityview
+import cityvista
 import strutils
 import random
 
@@ -15,7 +15,6 @@ let
 addImages(dieFaceImages)
 addMouseHandle(newMouseHandle(dieFace1))
 addMouseHandle(newMouseHandle(dieFace2))
-randomize()
 
 var
   dice*:array[1..2,int] = [3,4]
@@ -27,8 +26,10 @@ proc mouseOnDice(): bool =
 proc rollDice() = 
   for i,die in dice: dice[i] = rand(1..6)
 
-proc isRollingDice(): bool =
+proc isRollingDice*(): bool =
   dieRollFrame < maxRollFrames
+
+proc isDouble*(): bool = dice[1] == dice[2]
 
 proc rotateDie(b:var Boxy,die:ImageHandle) =
   var (x,y,w,h) = die.area
@@ -46,11 +47,16 @@ proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
 
+proc startDiceRoll*() =
+  if not isRollingDice() and isDouble(): 
+    randomize()
+    dieRollFrame = 0
+    playSound("wuerfelbecher")
+
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
-    if not isRollingDice() and mouseOnDice(): 
-      dieRollFrame = 0
-      playSound("wuerfelbecher")
+    if mouseOnDice(): 
+      startDiceRoll()
 
 proc draw (b:var Boxy) =
   if not isRollingDice():
