@@ -1,5 +1,5 @@
 import cityvista
-import citydice
+#import citydice
 import cityplay
 import os
 
@@ -21,7 +21,7 @@ proc draw (b:var Boxy) =
 #  b.drawRect(rect(vec2(300,300),vec2(500,500)),color(255,255,255,150))
 
 addCall(newCall("voracity",keyboard,mouse,draw))
-initCityDice()
+#initCityDice()
 initCityPlay()
 echo "nr of recievers: ",calls.len()
 echo "nr of mouse handles:",mouseHandles.len()

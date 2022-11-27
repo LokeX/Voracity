@@ -1,6 +1,5 @@
 import cityvista
 import citytext
-import citydice
 import strutils
 import sequtils
 import times
@@ -59,10 +58,17 @@ const
   gasStations = [2,15,27,37,47]
   bars = [1,16,18,20,28,35,40,46,51,54]
 
+  maxRollFrames = 40
+  die1Pos = (x:100,y:200)
+  die2Pos = (x:100,y:265)
+
 let
   ibmB = readTypeface("fonts\\IBMPlexMono-Bold.ttf")
   roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
   boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
+  dieFaceImages* = loadImages("pics\\diefaces\\*.gif")
+  dieFace1 = newImageHandle(dieFaceImages[0],die1Pos.x,die1Pos.y)
+  dieFace2 = newImageHandle(dieFaceImages[1],die2Pos.x,die2Pos.y)
 
 proc squareNames (filePath:string): seq[string] =
   var 
@@ -98,6 +104,37 @@ var
   moveSquares:seq[int]
   moveFromSquare:int
   oldTime = cpuTime()
+  dice*:array[1..2,int] = [3,4]
+  dieRollFrame = maxRollFrames
+
+proc mouseOnDice(): bool =
+  mouseOn(dieFace1) or mouseOn(dieFace2)
+
+proc rollDice() = 
+  for i,die in dice: dice[i] = rand(1..6)
+
+proc isRollingDice*(): bool =
+  dieRollFrame < maxRollFrames
+
+proc isDouble*(): bool = dice[1] == dice[2]
+
+proc rotateDie(b:var Boxy,die:ImageHandle) =
+  var (x,y,w,h) = die.area
+  b.drawImage(
+    dice[die.img.name.parseInt].intToStr,
+    center = vec2((x.toFloat+(w/2)),y.toFloat+(h/2)),
+    angle = (dieRollFrame*9).toFloat,
+    tint = color(1,1,1,41-dieRollFrame.toFloat)
+  )
+
+func imagePos(image:ImageHandle): Vec2 =
+  vec2(image.area.x.toFloat,image.area.y.toFloat)
+
+proc startDiceRoll*() =
+  if not isRollingDice() and isDouble(): 
+    randomize()
+    dieRollFrame = 0
+    playSound("wuerfelbecher")
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -313,6 +350,7 @@ proc mouseOnPlayer(): Player =
       return player
 
 proc mouseLeftClicked() =
+  if mouseOnDice(): startDiceRoll()
   if turn == nil:
     let pl = mouseOnPlayer()
     if pl != nil: 
@@ -348,6 +386,15 @@ proc mouse (m:MouseEvent) =
 
 proc draw (b:var Boxy) =
 #  b.showFonts()
+  if not isRollingDice():
+    b.drawImage(dice[1].intToStr,pos = imagePos(dieFace1)) 
+    b.drawImage(dice[2].intToStr,pos = imagePos(dieFace2))
+  else:
+    rollDice()
+    b.rotateDie(dieFace1)
+    b.rotateDie(dieFace2)
+    inc dieRollFrame
+
   b.drawImage("board",vec2(bx.toFloat,by.toFloat))
   b.drawText("text7",800,1025,mouseOn(),aovel60White)
   b.drawText("text9",1400,1025,$(if mouseOnPlayer()!=nil:mouseOnPlayer() else:players[1]).color,aovel60White)
@@ -355,6 +402,7 @@ proc draw (b:var Boxy) =
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
     aovel60White
   )
+
   for player in players:
     if player.kind != none or turn == nil:
       b.drawBatch(player)
@@ -363,8 +411,10 @@ proc draw (b:var Boxy) =
         b.drawTurnCursor(player)
       else:
         b.drawPlayerKind(player)
+
   for moveSquare in moveSquares:
     b.drawRect(squares[moveSquare].area.toRect,selColor)
+
   for i,player in players:
     if (turn == nil and playerKinds[i] != none) or (turn != nil and player.kind != none):
       for square in player.piecesOnSquares:
@@ -389,6 +439,9 @@ proc printReport() =
   echo PlayerColors(0)
 
 proc initCityPlay*() =
+  addImages(dieFaceImages)
+  addMouseHandle(newMouseHandle(dieFace1))
+  addMouseHandle(newMouseHandle(dieFace2))
   addImage(boardImage)
   addMouseHandle(newMouseHandle(boardImage))
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())  
