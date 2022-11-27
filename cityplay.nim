@@ -131,7 +131,7 @@ func imagePos(image:ImageHandle): Vec2 =
   vec2(image.area.x.toFloat,image.area.y.toFloat)
 
 proc startDiceRoll*() =
-  if not isRollingDice() and isDouble(): 
+  if not isRollingDice(): 
     randomize()
     dieRollFrame = 0
     playSound("wuerfelbecher")
@@ -359,7 +359,7 @@ proc mouseOnPlayer(): Player =
       return player
 
 proc mouseLeftClicked() =
-  if mouseOnDice(): startDiceRoll()
+  if mouseOnDice() and isDouble(): startDiceRoll()
   if turn == nil:
     let pl = mouseOnPlayer()
     if pl != nil: 
@@ -382,9 +382,22 @@ proc mouseLeftClicked() =
       moveSquares = @[]
       playSound("driveBy")
 
+var dieEdit:int
+
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
-    echo "Rune: ",k.rune
+    let c = k.rune.toUTF8
+    var i:int
+    try: i = c.parseInt except ValueError: i = 0
+    if c.toUpper == "D":
+      dieEdit = 1
+    elif dieEdit > 0 and i in 1..6:
+      dice[dieEdit] = i
+      inc dieEdit
+      if dieEdit > 2:
+        dieEdit = 0
+    else:
+      dieEdit = 0
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
