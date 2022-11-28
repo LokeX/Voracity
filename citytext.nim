@@ -1,4 +1,4 @@
-import cityvista
+import cityscape
 
 type
   TextImage* = tuple[globalBounds:Rect,textImage:Image]
