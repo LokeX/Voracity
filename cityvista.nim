@@ -27,6 +27,28 @@ var
   moveFromSquare:int
   oldTime = cpuTime()
   squares:array[1..60,AreaHandle]
+  playerBatches*:array[1..6,AreaHandle]
+
+proc newPlayerBatches(): array[1..6,AreaHandle] =
+  for index in 1..6:
+    result[index] = newAreaHandle(
+      "playerbatch"&index.intToStr,
+      15+bx+((index-1)*200),25,170,100
+    )
+    addMouseHandle(newMouseHandle(result[index]))
+
+proc wirePlayerBatches() =
+  var count = 1
+  for player in players:
+    if player.kind != none:
+      player.batch = playerBatches[count]
+      inc count
+
+proc newGame() =
+  players = newPlayers(playerKinds)
+  wirePlayerBatches()
+#  board = putPiecesOnBoard()
+  nextPlayerTurn()
 
 proc squareNames(filePath:string): seq[string] =
   var 
@@ -73,7 +95,7 @@ proc mouseOnSquareNr*(): int =
     if mouseOn() == square.name:
       return i
 
-proc pieceOn*(player:Player,squareNr:int): Area =
+proc pieceOn(player:Player,squareNr:int): Area =
   var
     (x,y,w,h) = squares[squareNr].area
   if w == 35:
@@ -267,4 +289,6 @@ proc initCityVista*() =
   addMouseHandle(newMouseHandle(boardImage))
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())  
   initSquareHandles()
+  playerBatches = newPlayerBatches()
+  wirePlayerBatches()
   addCall(newCall("cityvista",keyboard,mouse,draw))

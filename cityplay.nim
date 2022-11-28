@@ -1,5 +1,4 @@
 import cityscape
-import strutils
 import sequtils
 import random
 import sugar
@@ -61,7 +60,6 @@ var
   turn*:Turn = nil
   board:Board
   playerKinds*:array[1..6,PlayerKind]
-  playerBatches*:array[1..6,AreaHandle]
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)
@@ -76,21 +74,6 @@ proc startDiceRoll*() =
     randomize()
     dieRollFrame = 0
     playSound("wuerfelbecher")
-
-proc newPlayerBatches(): array[1..6,AreaHandle] =
-  for index in 1..6:
-    result[index] = newAreaHandle(
-      "playerbatch"&index.intToStr,
-      15+bx+((index-1)*200),25,170,100
-    )
-    addMouseHandle(newMouseHandle(result[index]))
-
-proc wirePlayerBatches() =
-  var count = 1
-  for player in players:
-    if player.kind != none:
-      player.batch = playerBatches[count]
-      inc count
 
 proc newDefaultPlayers(): array[1..6,Player] =
   for i in 1..6:
@@ -111,7 +94,7 @@ proc printPlayers() =
     echo player.piecesOnSquares
     echo player.cash
 
-proc newPlayers(kind:array[6,PlayerKind]): array[1..6,Player] =
+proc newPlayers*(kind:array[6,PlayerKind]): array[1..6,Player] =
   randomize()
   var randomPosition = rand(1..6)
   for color in PlayerColors:
@@ -153,12 +136,6 @@ proc nextPlayerTurn*() =
       ]
     )
   turn.player.turnNr = turn.nr  
-
-proc newGame*() =
-  players = newPlayers(playerKinds)
-  wirePlayerBatches()
-  board = putPiecesOnBoard()
-  nextPlayerTurn()
 
 proc printBoard() =
   for i in 1..60:
@@ -224,9 +201,7 @@ proc printReport() =
   printBoard()
   echo PlayerColors(0)
 
-playerBatches = newPlayerBatches()
 players = newDefaultPlayers()
-wirePlayerBatches()
 board = putPiecesOnBoard() 
-printReport()
+#printReport()
   
