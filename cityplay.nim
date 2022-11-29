@@ -29,37 +29,20 @@ type
     nrOfPlayerPieces:array[6,int]
   Board = array[1..60,Square]
 
-const
-  (bx*,by*) = (200,150)
-
-  selColor* = color(255,255,255,100)
+const 
   defaultPlayerKinds = [human,human,human,human,human,human]
-  playerColors*:array[PlayerColors,Color] = [
-    color(1,0,0),color(0,1,0),
-    color(0,0,1),color(1,1,0),
-    color(255,255,255),color(1,1,1)
-  ]
-  batchFontColors*:array[PlayerColors,Color] = [
-    color(1,1,1),
-    color(255,255,255),
-    color(1,1,1),
-    color(255,255,255),
-    color(1,1,1),
-    color(255,255,255),
-  ]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
   bars* = [1,16,18,20,28,35,40,46,51,54]
-
   maxRollFrames = 40
 
 var
+  playerKinds*:array[1..6,PlayerKind]
   dice*:array[1..2,int] = [3,4]
   dieRollFrame* = maxRollFrames
   players*:array[1..6,Player]
   turn*:Turn = nil
   board:Board
-  playerKinds*:array[1..6,PlayerKind]
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)
@@ -84,16 +67,6 @@ proc newDefaultPlayers(): array[1..6,Player] =
       piecesOnSquares:highways
     )
 
-proc printPlayers() =
-  for player in players:
-    echo "player"
-    echo player.nr
-    echo player.color
-    echo player.kind
-    echo player.batch.name
-    echo player.piecesOnSquares
-    echo player.cash
-
 proc newPlayers*(kind:array[6,PlayerKind]): array[1..6,Player] =
   randomize()
   var randomPosition = rand(1..6)
@@ -114,32 +87,17 @@ proc putPiecesOnBoard(): Board =
       for square in player.piecesOnSquares:
         inc result[square].nrOfPlayerPieces[player.nr-1]
 
-proc contestingPlayersNrs(): seq[int] = 
-  players.filterIt(it.kind != none).mapIt(it.nr)
-
 proc nextPlayerTurn*() =
   startDiceRoll()
-  let contesters = contestingPlayersNrs()
-  if turn == nil:
-    turn = Turn(nr:1,player:players[contesters[0]])
-  else:
-    let lastContester = turn.player.nr == contesters[^1]
-    turn = Turn(
-      nr:if lastContester: turn.nr+1 else: turn.nr,
-      player:players[
-        if lastContester: 
-          contesters[0] 
-        else: 
-          contesters[
-            contesters.find(turn.player.nr)+1
-          ]
-      ]
-    )
+  let contesters = players.filterIt(it.kind != none)
+  if turn == nil: turn = Turn(nr:1,player:contesters[0]) else:
+    let
+      isLastPlayer = turn.player.nr == contesters[^1].nr
+      turnNr = if isLastPlayer: turn.nr+1 else: turn.nr
+      nextPlayer = if isLastPlayer: contesters[0] else:
+        contesters[contesters.mapIt(it.nr).find(turn.player.nr)+1]
+    turn = Turn(nr:turnNr,player:nextPlayer)
   turn.player.turnNr = turn.nr  
-
-proc printBoard() =
-  for i in 1..60:
-    echo i,": ",board[i]
 
 func piecesOnSquare(player:Player,square:int): int =
   if player.kind != none:
@@ -177,13 +135,15 @@ proc moveToSquares(fromSquare:int,dice:array[2,int]): seq[int] =
       result.add(moveToSquare(fromSquare,die))
       if fromSquare in highways:
         result.add(gasStations.map(gasStation => moveToSquare(gasStation,die)))
+    result = result.filterIt(it != fromSquare)
   else:
     return @[]
 
 proc toggleKind*(kind:PlayerKind): PlayerKind =
   case kind
     of human:computer
-    of computer:none
+    of computer:
+      if playerKinds.filterIt(it != none).len == 1:human else:none
     of none:human
 
 proc moveToSquares*(fromSquare:int): seq[int] = moveToSquares(fromSquare,dice)
@@ -192,16 +152,6 @@ proc movePiece*(fromSquare,toSquare:int) =
   var pieceNr = turn.player.piecesOnSquares.find(fromSquare)
   if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
-proc printReport() =
-  printPlayers()
-  for highway in highways:
-    echo highway,": ",players[1].piecesOnSquare(highway)
-    echo highway,": ",playersPiecesOnSquare(highway)
-    echo highway,": ",nrOfPiecesOnSquare(highway)
-  printBoard()
-  echo PlayerColors(0)
-
 players = newDefaultPlayers()
 board = putPiecesOnBoard() 
-#printReport()
   

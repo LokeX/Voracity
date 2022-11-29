@@ -6,15 +6,36 @@ import strutils
 import sequtils
 
 const
+  bh = 100
+  (wx,wy) = (25,50)
+  (bx,by) = (wx,wy+bh)
   sqOff = 43
   (tbxo,lryo) = (220,172)
   (tyo,byo) = (70,690)
   (lxo,rxo) = (70,1030)
 
-  die1Pos = (x:100,y:200)
-  die2Pos = (x:100,y:265)
+  die1Pos = (x:1400,y:200)
+  die2Pos = (x:1400,y:265)
+
+  selColor = color(255,255,255,100)
+
+  playerColors*:array[PlayerColors,Color] = [
+    color(1,0,0),color(0,1,0),
+    color(0,0,1),color(1,1,0),
+    color(255,255,255),color(1,1,1)
+  ]
+  batchFontColors:array[PlayerColors,Color] = [
+    color(1,1,1),
+    color(255,255,255),
+    color(1,1,1),
+    color(255,255,255),
+    color(1,1,1),
+    color(255,255,255),
+  ]
   
 let
+  aovel = readTypeface("fonts\\AovelSansRounded-rdDL.ttf")
+  cabal = readTypeface("fonts\\Cabal-w5j3.ttf")
   ibmB = readTypeface("fonts\\IBMPlexMono-Bold.ttf")
   roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
   boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
@@ -33,7 +54,7 @@ proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
     result[index] = newAreaHandle(
       "playerbatch"&index.intToStr,
-      15+bx+((index-1)*200),25,170,100
+      15+bx+((index-1)*200),25,170,bh
     )
     addMouseHandle(newMouseHandle(result[index]))
 
@@ -75,14 +96,6 @@ func squareAreas(): array[1..60,Area] =
         result[1+(i-6)] = (bx+rxo,by+lryo+(i*sqOff),100,35)
 
 proc getColor(player:Player): Color = playerColors[player.color]
-
-proc showFonts(b:var Boxy) =
-  b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
-  b.drawText("font2",1500,100,"This is font: cabal30White",cabal30White)
-  b.drawText("font3",1500,150,"This is font: confes40Black",confes40Black)
-  b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
-  b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
-  b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
 
 func offsetArea(a:Area,offset:int): Area = (a.x+offset,a.y+offset,a.w,a.h)
 
@@ -139,7 +152,7 @@ proc drawPlayerKind(b:var Boxy,player:Player) =
     (player.batch.area.x+offset[playerKinds[player.nr].ord]).toFloat,
     (player.batch.area.y+30).toFloat,
     $playerKinds[player.nr],
-    fontFace(ibmB,25,batchFontColors[player.color])
+    fontFace(aovel,30,batchFontColors[player.color])
   )
 
 proc mouseRightClicked() =

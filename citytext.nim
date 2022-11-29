@@ -40,3 +40,18 @@ proc drawText*(bx:var Boxy,imageKey:string,x,y:float32,text:string,font:Font) =
   let txt = text.imageText(x,y,font,winSize().vec2)
   bx.addImage(imageKey, txt.textImage)
   bx.drawImage(imageKey, txt.globalBounds.xy)
+
+var showText:bool
+
+proc showFonts(b:var Boxy) =
+  if showText:
+    b.drawText("font1",1500,50,"This is font: cabalB20Black",cabalB20Black)
+    b.drawText("font2",1500,100,"This is font: cabal30White",cabal30White)
+    b.drawText("font3",1500,150,"This is font: confes40Black",confes40Black)
+    b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
+    b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
+    b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
+
+proc initCityText*() =
+  showText = true
+  addCall(newCall("fonts",nil,nil,showFonts))

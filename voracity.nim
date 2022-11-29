@@ -1,5 +1,5 @@
 import cityscape
-#import citydice
+import citytext
 import cityvista
 import os
 
@@ -18,11 +18,11 @@ proc mouse (m:MouseEvent) =
 
 proc draw (b:var Boxy) =
   b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
-#  b.drawRect(rect(vec2(300,300),vec2(500,500)),color(255,255,255,150))
 
 addCall(newCall("voracity",keyboard,mouse,draw))
-#initCityDice()
+initCityText()
 initCityVista()
+window.visible = true
 echo "nr of recievers: ",calls.len()
 echo "nr of mouse handles:",mouseHandles.len()
 

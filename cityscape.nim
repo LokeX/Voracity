@@ -72,8 +72,6 @@ var
   bxy = newBoxy()
 
 bxy.scale(boxyScale)
-#bxy.scale(1)
-window.visible = true
 
 proc winSize*(): IVec2 =
   ivec2(winWidth,winHeight)
