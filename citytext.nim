@@ -53,5 +53,5 @@ proc showFonts(b:var Boxy) =
     b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
 
 proc initCityText*() =
-  showText = true
+  showText = false
   addCall(newCall("fonts",nil,nil,showFonts))

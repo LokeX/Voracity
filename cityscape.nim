@@ -144,14 +144,19 @@ proc mouseOn*(): string =
       return mouseHandles[i].name
   return "None"
 
-proc mouseOn*(imgName:ImageName): bool =
-  mouseOn() == imgName.name
+proc mouseOn*(imgName:ImageName): bool = mouseOn() == imgName.name
 
-proc mouseOn*(ih:ImageHandle): bool =
-  mouseOn() == ih.img.name
+proc mouseOn*(ih:ImageHandle): bool = mouseOn() == ih.img.name
 
-proc mouseOn*(ah:AreaHandle): bool =
-  mouseOn() == ah.name
+proc mouseOn*(ah:AreaHandle): bool = mouseOn() == ah.name
+
+proc mouseOn*(area:Area): bool =
+  let 
+    (mx,my) = mousePos(window.mousePos)
+    (x,y,w,h) = area
+
+  (x.toFloat*boxyScale).toInt <= mx and (y.toFloat*boxyScale).toInt <= my and 
+  mx <= ((x+w).toFloat*boxyScale).toInt and my <= ((y+h).toFloat*boxyScale).toInt
 
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(

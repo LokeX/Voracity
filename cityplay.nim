@@ -99,6 +99,12 @@ proc nextPlayerTurn*() =
     turn = Turn(nr:turnNr,player:nextPlayer)
   turn.player.turnNr = turn.nr  
 
+proc opponentPlayerOn*(square:int): Player =
+  for player in players.filterIt(it.kind != none and it.nr != turn.player.nr):
+    for piece in player.piecesOnSquares:
+      if piece == square:
+        return player
+
 func piecesOnSquare(player:Player,square:int): int =
   if player.kind != none:
     player.piecesOnSquares.count(square)
@@ -109,7 +115,7 @@ proc playersPiecesOnSquare(square:int): array[1..6,int] =
   for i,player in players:
     result[i] = player.piecesOnSquare(square)
 
-proc nrOfPiecesOnSquare(square:int): int =
+proc nrOfPiecesOnSquare*(square:int): int =
   playersPiecesOnSquare(square).sum
 
 proc turnPlayerHasPieceOn(square:int): bool =
