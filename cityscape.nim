@@ -21,7 +21,7 @@ type
     area*:Area
 
   MouseHandle* = ref object 
-    name       :string
+    name*      :string
     x1,y1,x2,y2:int
 
   KeyState* = tuple[down,pressed,released,toggle:bool]
@@ -181,9 +181,8 @@ proc addMouseHandle*(mh:MouseHandle) =
   mouseHandles.add(mh)
 
 proc removeMouseHandle*(name:string) =
-  for i,handle in mouseHandles:
-    if handle.name == name:
-      mouseHandles.delete(i)
+  let index = mouseHandles.mapIt(it.name).find(name)
+  if index > -1: mouseHandles.delete(index)
 
 proc newImageHandle*(img:ImageName,x,y:int): ImageHandle =
   ImageHandle(
@@ -253,8 +252,7 @@ window.onRune = proc(rune:Rune) =
     if call.keyboard != nil: 
       call.keyboard(newKeyEvent(button,rune))
 
-#[ window.onMouseMove = proc () =
+window.onMouseMove = proc () =
   for call in calls:
     if call.mouse != nil: 
       call.mouse(newMouseMoveEvent())
- ]#

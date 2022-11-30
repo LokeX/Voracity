@@ -6,15 +6,15 @@ import strutils
 import sequtils
 
 type 
-  Dialog = ref object of RootObj
+  Dialog = ref object
     area,yesArea,noArea:Area
     yes,no:MouseHandle
-    normal,select:Color
+    normal,select,bgYes,bgNo:Color
     str:string
-  RemovePieceDialog = ref object of Dialog
+#[   RemovePiece = ref object
     player:Player
     removePieceOnSquare:int
-
+ ]#
 const
   bh = 100
   (wx,wy) = (25,25)
@@ -59,7 +59,7 @@ var
   oldTime = cpuTime()
   squares:array[1..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
-  removePieceDialog:RemovePieceDialog
+  removePieceDialog:Dialog
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -178,16 +178,18 @@ proc drawPlayerKind(b:var Boxy,player:Player) =
 #[ proc newDialog(area,yes,no:Area,str:string): Dialog =
   Dialog(area:area,yes:yes,no:no,normal:color(0,0,1),select:color(1,0,0),str:str)
  ]#
-proc newRemovePieceDialog(player:Player,removePieceOnSquare:int): RemovePieceDialog =
+proc newRemovePieceDialog(removePieceOnSquare:int): Dialog =
   let 
     area:Area = (bx+650,by+250,300,100)
     yesArea:Area = (area.x+90,area.y+50,50,30)
     noArea:Area = (area.x+160,area.y+50,50,30)
     yes:MouseHandle = newMouseHandle(newAreaHandle ("yes",yesArea))
     no:MouseHandle = newMouseHandle(newAreaHandle ("no",noArea))
-  var str = $opponentPlayerOn(removePieceOnSquare).color
+  var str = $removePiece.player.color
   str = "Remove "&str&" piece on square nr. "&removePieceOnSquare.intToStr&"?"
-  RemovePieceDialog(
+  addMouseHandle(yes)
+  addMouseHandle(no)
+  Dialog(
     area:area,
     yes:yes,
     no:no,
@@ -196,18 +198,20 @@ proc newRemovePieceDialog(player:Player,removePieceOnSquare:int): RemovePieceDia
     normal:color(0,0,1),
     select:color(1,0,0),
     str:str,
-    player:player,
-    removePieceOnSquare:removePieceOnSquare
   )
+
+proc destroyDialog(dialog:var Dialog) = 
+  removeMouseHandle(dialog.no.name)
+  removeMouseHandle(dialog.yes.name)
+  dialog = nil
 
 proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
   if dialog != nil and key.len > 0:
-    let
-      yesbg = if mouseOn(dialog.yes): dialog.select else:dialog.normal
-      nobg = if mouseOn(dialog.no): dialog.select else:dialog.normal
+    dialog.bgYes = if mouseOn() == dialog.yes.name: dialog.select else:dialog.normal
+    dialog.bgNo = if mouseOn() == dialog.no.name: dialog.select else:dialog.normal
     b.drawRect(dialog.area.toRect,color(255,255,255))
-    b.drawRect(dialog.yesArea.toRect,yesbg)
-    b.drawRect(dialog.noArea.toRect,nobg)
+    b.drawRect(dialog.yesArea.toRect,dialog.bgYes)
+    b.drawRect(dialog.noArea.toRect,dialog.bgNo)
     b.drawAreaShadow(dialog.area,10,color(255,255,255,100))
     b.drawText(
       "dialog:"&key,
@@ -232,6 +236,8 @@ proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
     )
 
 proc mouseRightClicked() =
+  if removePieceDialog != nil:
+    destroyDialog(removePieceDialog)
   if moveSquares.len > 0: 
     moveSquares = @[]
   else:
@@ -254,28 +260,44 @@ proc togglePlayerKind() =
       playerKinds[pl.nr] = playerKinds[pl.nr].toggleKind()
       playSound("Blop-Mark_DiAngelo")
 
+proc moveReady(): bool = 
+  turn != nil and not isRollingDice() and not turn.diceMoved
+
+proc selectablePieceOn(square:int): bool = 
+  moveSquares.len == 0 or not (square in moveSquares)
+
+proc removablePieceOn(square:int): bool =
+  nrOfPiecesOnSquare(square) == 1
+
+proc setDiceMoved(square:int) =
+  if not turn.diceMoved:
+    turn.diceMoved = not (
+      square in gasStations and 
+      moveFromSquare in highways
+    )
+
+proc moveSelectedPiece(fromSquare,toSquare:int) =
+  movePiece(moveFromSquare,toSquare)
+  setDiceMoved(toSquare)
+  moveSquares = @[]
+  playSound("driveBy")
+
+proc checkRemovePieceOn(square:int) =
+  if removablePieceOn(square):
+    setRemovePieceOn(square)
+    removePieceDialog = newRemovePieceDialog(square)
+
 proc pieceSelectAndMove() =
   let clickedSquareNr = mouseOnSquareNr()
-  if clickedSquareNr > 0 and turn != nil and not isRollingDice():
-    if moveSquares.len == 0 or not (clickedSquareNr in moveSquares):
+  if clickedSquareNr > 0 and moveReady():
+    if selectablePieceOn(clickedSquareNr):
       moveFromSquare = clickedSquareNr
       if moveablePieceOn(moveFromSquare):
         moveSquares = moveToSquares(moveFromSquare)
         playSound("carstart-1")
     elif clickedSquareNr in moveSquares:
-      if nrOfPiecesOnSquare(clickedSquareNr) == 1:
-        removePieceDialog = newRemovePieceDialog(
-          opponentPlayerOn(clickedSquareNr),
-          clickedSquareNr
-        )
-      movePiece(moveFromSquare,clickedSquareNr)
-      if not turn.diceMoved:
-        turn.diceMoved = not (
-          clickedSquareNr in gasStations and 
-          moveFromSquare in highways
-        )
-      moveSquares = @[]
-      playSound("driveBy")
+      checkRemovePieceOn(clickedSquareNr)
+      moveSelectedPiece(moveFromSquare,clickedSquareNr)
 
 proc mouseOnDice(): bool =
   mouseOn(dieFace1) or mouseOn(dieFace2)
@@ -284,9 +306,18 @@ proc diceRoll() =
   if mouseOnDice() and isDouble(): startDiceRoll()
 
 proc mouseLeftClicked() =
-  diceRoll()
-  togglePlayerKind()
-  pieceSelectAndMove()
+  if removePieceDialog != nil:
+    if mouseOn() == removePieceDialog.yes.name:
+      removePlayersPiece()
+      destroyDialog(removePieceDialog)
+      playSound("Deanscream-2")
+    else:
+      if mouseOn() == removePieceDialog.no.name:
+        destroyDialog(removePieceDialog)
+  else:
+    diceRoll()
+    togglePlayerKind()
+    pieceSelectAndMove()
 
 proc rotateDie(b:var Boxy,die:ImageHandle) =
   var (x,y,w,h) = die.area
@@ -331,7 +362,7 @@ proc drawMoveSquares(b:var Boxy) =
 proc drawPiecesOnSquares(b:var Boxy) =
   for i,player in players:
     if (turn == nil and playerKinds[i] != none) or (turn != nil and player.kind != none):
-      for square in player.piecesOnSquares:
+      for square in player.piecesOnSquares.filterIt(it != 0):
         b.drawRect(player.pieceOn(square).toRect,player.getColor)
 
 proc drawMisc(b:var Boxy) =
@@ -371,6 +402,7 @@ proc keyboard (k:KeyEvent) =
       dieEdit = 0
 
 proc mouse (m:MouseEvent) =
+#  if removePieceDialog != nil: removePieceDialog.mouseOver()
   if mouseClicked(m.keyState) and not isRollingDice():
     if m.button == MouseRight:
       mouseRightClicked()

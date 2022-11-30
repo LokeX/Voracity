@@ -28,6 +28,7 @@ type
     evals:seq[tuple[evalDesc:string,eval:int]]
     nrOfPlayerPieces:array[6,int]
   Board = array[1..60,Square]
+  RemovePiece* = tuple[player:Player,piece:int]
 
 const 
   defaultPlayerKinds = [human,human,human,human,human,human]
@@ -37,6 +38,7 @@ const
   maxRollFrames = 40
 
 var
+  removePiece*:RemovePiece
   playerKinds*:array[1..6,PlayerKind]
   dice*:array[1..2,int] = [3,4]
   dieRollFrame* = maxRollFrames
@@ -99,11 +101,17 @@ proc nextPlayerTurn*() =
     turn = Turn(nr:turnNr,player:nextPlayer)
   turn.player.turnNr = turn.nr  
 
-proc opponentPlayerOn*(square:int): Player =
+proc removePieceOn(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none and it.nr != turn.player.nr):
-    for piece in player.piecesOnSquares:
+    for pieceNr,piece in player.piecesOnSquares:
       if piece == square:
-        return player
+        return (player,pieceNr)
+
+proc setRemovePieceOn*(square:int) =
+  removePiece = removePieceOn(square)
+
+proc removePlayersPiece*() =
+  removePiece.player.piecesOnSquares[removePiece.piece] = 0
 
 func piecesOnSquare(player:Player,square:int): int =
   if player.kind != none:
