@@ -5,6 +5,16 @@ import times
 import strutils
 import sequtils
 
+type 
+  Dialog = ref object of RootObj
+    area,yesArea,noArea:Area
+    yes,no:MouseHandle
+    normal,select:Color
+    str:string
+  RemovePieceDialog = ref object of Dialog
+    player:Player
+    removePieceOnSquare:int
+
 const
   bh = 100
   (wx,wy) = (25,25)
@@ -49,7 +59,7 @@ var
   oldTime = cpuTime()
   squares:array[1..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
-  removePieceOnSquare = 0
+  removePieceDialog:RemovePieceDialog
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -165,42 +175,61 @@ proc drawPlayerKind(b:var Boxy,player:Player) =
     fontFace(aovel,30,batchFontColors[player.color])
   )
 
-proc drawConfirmDialog(b:var Boxy) =
+#[ proc newDialog(area,yes,no:Area,str:string): Dialog =
+  Dialog(area:area,yes:yes,no:no,normal:color(0,0,1),select:color(1,0,0),str:str)
+ ]#
+proc newRemovePieceDialog(player:Player,removePieceOnSquare:int): RemovePieceDialog =
   let 
-    dialog:Area = (bx+650,by+250,300,100)
-    yes:Area = (dialog.x+90,dialog.y+50,50,30)
-    no:Area = (dialog.x+160,dialog.y+50,50,30)
-    normal = color(0,0,1)
-    select = color(1,0,0)
-    yesbg = if mouseOn(yes):select else:normal
-    nobg = if mouseOn(no):select else:normal
-    strColor = $opponentPlayerOn(removePieceOnSquare).color
-  
-  b.drawRect(dialog.toRect,color(255,255,255))
-  b.drawRect(yes.toRect,yesbg)
-  b.drawRect(no.toRect,nobg)
-  b.drawAreaShadow(dialog,10,color(255,255,255,100))
-  b.drawText(
-    "confirmdialog",
-    (dialog.x+15).toFloat,
-    (dialog.y+10).toFloat,
-    "Remove "&strColor&" piece on square nr. "&removePieceOnSquare.intToStr&"?",
-    fontFace(roboto,16,color(1,1,0))
+    area:Area = (bx+650,by+250,300,100)
+    yesArea:Area = (area.x+90,area.y+50,50,30)
+    noArea:Area = (area.x+160,area.y+50,50,30)
+    yes:MouseHandle = newMouseHandle(newAreaHandle ("yes",yesArea))
+    no:MouseHandle = newMouseHandle(newAreaHandle ("no",noArea))
+  var str = $opponentPlayerOn(removePieceOnSquare).color
+  str = "Remove "&str&" piece on square nr. "&removePieceOnSquare.intToStr&"?"
+  RemovePieceDialog(
+    area:area,
+    yes:yes,
+    no:no,
+    yesArea:yesArea,
+    noArea:noArea,
+    normal:color(0,0,1),
+    select:color(1,0,0),
+    str:str,
+    player:player,
+    removePieceOnSquare:removePieceOnSquare
   )
-  b.drawText(
-    "dialogyes",
-    (yes.x+12).toFloat,
-    (yes.y+5).toFloat,
-    "Yes",
-    fontFace(roboto,16,color(1,1,1))
-  )
-  b.drawText(
-    "dialogno",
-    (no.x+16).toFloat,
-    (no.y+5).toFloat,
-    "No",
-    fontFace(roboto,16,color(1,1,1))
-  )
+
+proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
+  if dialog != nil and key.len > 0:
+    let
+      yesbg = if mouseOn(dialog.yes): dialog.select else:dialog.normal
+      nobg = if mouseOn(dialog.no): dialog.select else:dialog.normal
+    b.drawRect(dialog.area.toRect,color(255,255,255))
+    b.drawRect(dialog.yesArea.toRect,yesbg)
+    b.drawRect(dialog.noArea.toRect,nobg)
+    b.drawAreaShadow(dialog.area,10,color(255,255,255,100))
+    b.drawText(
+      "dialog:"&key,
+      (dialog.area.x+15).toFloat,
+      (dialog.area.y+10).toFloat,
+      dialog.str,
+      fontFace(roboto,16,color(1,1,0))
+    )
+    b.drawText(
+      "dialogyes:"&key,
+      (dialog.yesArea.x+12).toFloat,
+      (dialog.yesArea.y+5).toFloat,
+      "Yes",
+      fontFace(roboto,16,color(1,1,1))
+    )
+    b.drawText(
+      "dialogno:"&key,
+      (dialog.noArea.x+16).toFloat,
+      (dialog.noArea.y+5).toFloat,
+      "No",
+      fontFace(roboto,16,color(1,1,1))
+    )
 
 proc mouseRightClicked() =
   if moveSquares.len > 0: 
@@ -235,8 +264,10 @@ proc pieceSelectAndMove() =
         playSound("carstart-1")
     elif clickedSquareNr in moveSquares:
       if nrOfPiecesOnSquare(clickedSquareNr) == 1:
-        removePieceOnSquare = clickedSquareNr
-        echo "kill piece on: ",clickedSquareNr
+        removePieceDialog = newRemovePieceDialog(
+          opponentPlayerOn(clickedSquareNr),
+          clickedSquareNr
+        )
       movePiece(moveFromSquare,clickedSquareNr)
       if not turn.diceMoved:
         turn.diceMoved = not (
@@ -270,7 +301,7 @@ func imagePos(image:ImageHandle): Vec2 =
   vec2(image.area.x.toFloat,image.area.y.toFloat)
 
 proc drawDice(b:var Boxy) =
-#  if turn != nil:
+  if turn != nil:
     if not isRollingDice():
       b.drawImage(dice[1].intToStr,pos = imagePos(dieFace1)) 
       b.drawImage(dice[2].intToStr,pos = imagePos(dieFace2))
@@ -317,7 +348,8 @@ proc draw (b:var Boxy) =
   b.drawPlayerBatches()
   b.drawMoveSquares()
   b.drawPiecesOnSquares()
-  if removePieceOnSquare > 0: b.drawConfirmDialog()
+  if removePieceDialog != nil: 
+    b.drawDialog(removePieceDialog,"removepiece")
   b.drawMisc()
 #  b.showFonts()
 

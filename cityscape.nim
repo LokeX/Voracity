@@ -150,14 +150,14 @@ proc mouseOn*(ih:ImageHandle): bool = mouseOn() == ih.img.name
 
 proc mouseOn*(ah:AreaHandle): bool = mouseOn() == ah.name
 
-proc mouseOn*(area:Area): bool =
+#[ proc mouseOn*(area:Area): bool =
   let 
     (mx,my) = mousePos(window.mousePos)
     (x,y,w,h) = area
 
   (x.toFloat*boxyScale).toInt <= mx and (y.toFloat*boxyScale).toInt <= my and 
   mx <= ((x+w).toFloat*boxyScale).toInt and my <= ((y+h).toFloat*boxyScale).toInt
-
+ ]#
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(
     name:hn,
@@ -198,6 +198,9 @@ func toRect*(area:Area): Rect =
   let
     (x,y,w,h) = area
   rect(vec2(x.toFloat,y.toFloat),vec2(w.toFloat,h.toFloat))
+
+func toRect*(h:MouseHandle): Rect =
+  rect(vec2(h.x1.toFloat,h.y1.toFloat),vec2((h.x2-h.x1).toFloat,(h.y2-h.y1).toFloat))
 
 proc newAreaHandle*(name:string,x,y,w,h:int): AreaHandle =
   AreaHandle(name:name,area:(x,y,w,h))
