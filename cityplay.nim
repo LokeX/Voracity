@@ -102,7 +102,7 @@ proc nextPlayerTurn*() =
   turn.player.turnNr = turn.nr  
 
 proc removePieceOn(square:int): tuple[player:Player,piece:int] =
-  for player in players.filterIt(it.kind != none and it.nr != turn.player.nr):
+  for player in players.filterIt(it.kind != none):
     for pieceNr,piece in player.piecesOnSquares:
       if piece == square:
         return (player,pieceNr)
@@ -113,7 +113,7 @@ proc setRemovePieceOn*(square:int) =
 proc removePlayersPiece*() =
   removePiece.player.piecesOnSquares[removePiece.piece] = 0
 
-func piecesOnSquare(player:Player,square:int): int =
+func piecesOnSquare*(player:Player,square:int): int =
   if player.kind != none:
     player.piecesOnSquares.count(square)
   else:
@@ -126,7 +126,7 @@ proc playersPiecesOnSquare(square:int): array[1..6,int] =
 proc nrOfPiecesOnSquare*(square:int): int =
   playersPiecesOnSquare(square).sum
 
-proc turnPlayerHasPieceOn(square:int): bool =
+proc turnPlayerHasPieceOn*(square:int): bool =
   turn.player.piecesOnSquares
   .filter(p => p != 0)
   .any(p => p == square)

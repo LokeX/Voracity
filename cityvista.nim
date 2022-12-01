@@ -11,10 +11,7 @@ type
     yes,no:MouseHandle
     normal,select,bgYes,bgNo:Color
     str:string
-#[   RemovePiece = ref object
-    player:Player
-    removePieceOnSquare:int
- ]#
+
 const
   bh = 100
   (wx,wy) = (25,25)
@@ -55,11 +52,12 @@ let
 
 var
   moveSquares:seq[int]
-  moveFromSquare:int
+  selectedSquare:int
   oldTime = cpuTime()
   squares:array[1..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
   removePieceDialog:Dialog
+  removedPiecesArea:AreaHandle
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -114,18 +112,25 @@ proc initSquareHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
 
+proc initRemovedPiecesArea() =
+  removedPiecesArea = AreaHandle(name:"removedpieces",area:(bx+1225,by,35,100))
+  addMouseHandle(newMouseHandle(removedPiecesArea))
+
 proc mouseOnSquareNr*(): int =
   for i,square in squares:
     if mouseOn() == square.name:
       return i
 
 proc pieceOn(player:Player,squareNr:int): Area =
-  var
-    (x,y,w,h) = squares[squareNr].area
-  if w == 35:
+  if squareNr == 0:
+    let (x,y,w,_) = removedPiecesArea.area
     result = (x+5,y+6+(player.color.ord*15),w-10,12)
   else:
-    result = (x+6+(player.color.ord*15),y+5,12,h-10)
+    let (x,y,w,h) = squares[squareNr].area
+    if w == 35:
+      result = (x+5,y+6+(player.color.ord*15),w-10,12)
+    else:
+      result = (x+6+(player.color.ord*15),y+5,12,h-10)
 
 proc areaShadows(area:Area,offset:int): tuple[shadowRight:Area,shadowBottom:Area] =
   ((area.x+area.w,area.y+offset,offset,area.h),
@@ -267,17 +272,17 @@ proc selectablePieceOn(square:int): bool =
   moveSquares.len == 0 or not (square in moveSquares)
 
 proc removablePieceOn(square:int): bool =
-  nrOfPiecesOnSquare(square) == 1
+  nrOfPiecesOnSquare(square) == 1 #and not turnPlayerHasPieceOn(square)
 
 proc setDiceMoved(square:int) =
   if not turn.diceMoved:
     turn.diceMoved = not (
       square in gasStations and 
-      moveFromSquare in highways
+      selectedSquare in highways
     )
 
-proc moveSelectedPiece(fromSquare,toSquare:int) =
-  movePiece(moveFromSquare,toSquare)
+proc moveSelectedPieceTo(toSquare:int) =
+  movePiece(selectedSquare,toSquare)
   setDiceMoved(toSquare)
   moveSquares = @[]
   playSound("driveBy")
@@ -287,17 +292,20 @@ proc checkRemovePieceOn(square:int) =
     setRemovePieceOn(square)
     removePieceDialog = newRemovePieceDialog(square)
 
+proc checkPieceSelectOn(square:int) =
+  selectedSquare = square
+  if moveablePieceOn(selectedSquare):
+    moveSquares = moveToSquares(selectedSquare)
+    playSound("carstart-1")
+
 proc pieceSelectAndMove() =
-  let clickedSquareNr = mouseOnSquareNr()
-  if clickedSquareNr > 0 and moveReady():
-    if selectablePieceOn(clickedSquareNr):
-      moveFromSquare = clickedSquareNr
-      if moveablePieceOn(moveFromSquare):
-        moveSquares = moveToSquares(moveFromSquare)
-        playSound("carstart-1")
-    elif clickedSquareNr in moveSquares:
-      checkRemovePieceOn(clickedSquareNr)
-      moveSelectedPiece(moveFromSquare,clickedSquareNr)
+  let square = mouseOnSquareNr()
+  if square > 0 and moveReady():
+    if selectablePieceOn(square):
+      checkPieceSelectOn(square)
+    elif square in moveSquares:
+      checkRemovePieceOn(square)
+      moveSelectedPieceTo(square)
 
 proc mouseOnDice(): bool =
   mouseOn(dieFace1) or mouseOn(dieFace2)
@@ -305,15 +313,18 @@ proc mouseOnDice(): bool =
 proc diceRoll() =
   if mouseOnDice() and isDouble(): startDiceRoll()
 
+proc dialog() =
+  if mouseOn() == removePieceDialog.yes.name:
+    removePlayersPiece()
+    destroyDialog(removePieceDialog)
+    playSound("Deanscream-2")
+  else:
+    if mouseOn() == removePieceDialog.no.name:
+      destroyDialog(removePieceDialog)
+
 proc mouseLeftClicked() =
   if removePieceDialog != nil:
-    if mouseOn() == removePieceDialog.yes.name:
-      removePlayersPiece()
-      destroyDialog(removePieceDialog)
-      playSound("Deanscream-2")
-    else:
-      if mouseOn() == removePieceDialog.no.name:
-        destroyDialog(removePieceDialog)
+    dialog()
   else:
     diceRoll()
     togglePlayerKind()
@@ -362,8 +373,19 @@ proc drawMoveSquares(b:var Boxy) =
 proc drawPiecesOnSquares(b:var Boxy) =
   for i,player in players:
     if (turn == nil and playerKinds[i] != none) or (turn != nil and player.kind != none):
-      for square in player.piecesOnSquares.filterIt(it != 0):
-        b.drawRect(player.pieceOn(square).toRect,player.getColor)
+      for square in player.piecesOnSquares.deduplicate():
+        let 
+          (x,y,w,h) = player.pieceOn(square)
+          nrOfplayersPiecesOnSquare = player.piecesOnSquare(square)
+        b.drawRect((x,y,w,h).toRect,player.getColor)
+        if nrOfplayersPiecesOnSquare > 1:
+          b.drawText(
+            $player.color&"nrofpieceson"&square.intToStr,
+            x.toFloat+2,
+            y.toFloat,
+            nrOfplayersPiecesOnSquare.intToStr,
+            fontFace(ibmB,10,color(1,1,1))
+          )
 
 proc drawMisc(b:var Boxy) =
   b.drawText("text7",800,1025,mouseOn(),aovel60White)
@@ -415,7 +437,8 @@ proc initCityVista*() =
   addMouseHandle(newMouseHandle(dieFace2))
   addImage(boardImage)
   addMouseHandle(newMouseHandle(boardImage))
-  squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())  
+  squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
+  initRemovedPiecesArea()
   initSquareHandles()
   playerBatches = newPlayerBatches()
   wirePlayerBatches()
