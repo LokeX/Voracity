@@ -1,0 +1,119 @@
+plan:
+125 gram
+57
+20000
+plan:
+400 kilo
+30,49
+40000
+plan:
+Acquittal
+33,10
+40000
+plan:
+Agent
+4,9
+40000
+plan:
+Burglary
+8
+plan:
+Cheat
+12
+20000
+plan:
+Coup
+60,60,6,6
+150000
+plan:
+Demolition
+43
+20000
+plan:
+Party drugs
+45,19
+40000
+plan:
+Duty free
+11
+20000
+plan:
+Ecstacy
+30,19
+40000
+plan:
+Euphoria
+45
+20000
+plan:
+Fishy cargo
+49
+20000
+plan:
+Harvest
+22,39
+40000
+plan:
+Health plan
+4,25
+40000
+plan:
+Hooked
+21,57
+40000
+plan:
+Infiltration
+60,6
+40000
+plan:
+Judicial murder
+10,10
+60000
+Majority investment
+4,4,4
+80000
+plan:
+Strong medicine
+45,57
+40000
+plan:
+Borderless
+49,55
+40000
+plan:
+Grand design
+43,4
+40000
+plan:
+Rock solid claims
+30,39
+40000
+plan:
+Ram theft
+13
+20000
+plan:
+Recycling
+26,7
+40000
+plan:
+Secret weapon
+9,6
+40000
+plan:
+Sing along song
+10
+20000
+plan:
+Small box
+11,30
+40000
+plan:
+Exotics
+21,11
+40000
+plan:
+Et spiritus sancti
+48,7
+40000
+Anal correction
