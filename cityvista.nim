@@ -45,6 +45,7 @@ let
   cabal = readTypeface("fonts\\Cabal-w5j3.ttf")
   ibmB = readTypeface("fonts\\IBMPlexMono-Bold.ttf")
   roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
+
   boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
   dieFaceImages = loadImages("pics\\diefaces\\*.gif")
   dieFace1 = newImageHandle(dieFaceImages[0],die1Pos.x,die1Pos.y)
@@ -52,12 +53,11 @@ let
 
 var
   moveSquares:seq[int]
-  selectedSquare:int
+  selectedSquare:int = -1
   oldTime = cpuTime()
-  squares:array[1..60,AreaHandle]
+  squares:array[0..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
   removePieceDialog:Dialog
-  removedPiecesArea:AreaHandle
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -70,30 +70,32 @@ proc newPlayerBatches(): array[1..6,AreaHandle] =
 proc wirePlayerBatches() =
   var count = 1
   for player in players:
-    if player.kind != none:
+    if player.kind != none or turn == nil:
       player.batch = playerBatches[count]
       inc count
 
 proc newGame() =
   players = newPlayers(playerKinds)
+  nextPlayerTurn()
   wirePlayerBatches()
 #  board = putPiecesOnBoard()
-  nextPlayerTurn()
 
 proc squareNames(filePath:string): seq[string] =
   var 
     nr = 0
     text = open(filePath,fmRead)
+  result.add("removedpieces")
   while not endOfFile(text):
     inc nr
     result.add(text.readLine&" Nr. "&nr.intToStr)
   close(text)
 
-func zipToAreaHandles(names:seq[string],areas:openArray[Area]): array[1..60,AreaHandle] =
+func zipToAreaHandles(names:seq[string],areas:openArray[Area]): array[0..60,AreaHandle] =
   for i,square in zip(names,areas):
-    result[i+1] = newAreaHandle(square)
+    result[i] = newAreaHandle(square)
 
-func squareAreas(): array[1..60,Area] =
+func squareAreas(): array[0..60,Area] =
+  result[0] = (bx+1225,by,35,100)
   for i in 0..17:
     result[37+i] = (bx+tbxo+(i*sqOff),by+tyo,35,100)
     result[24-i] = (bx+tbxo+(i*sqOff),by+byo,35,100)
@@ -112,21 +114,18 @@ proc initSquareHandles() =
   for areaHandle in squares:
     addMouseHandle(newMouseHandle(areaHandle))
 
-proc initRemovedPiecesArea() =
-  removedPiecesArea = AreaHandle(name:"removedpieces",area:(bx+1225,by,35,100))
-  addMouseHandle(newMouseHandle(removedPiecesArea))
-
 proc mouseOnSquareNr*(): int =
+  let mo = mouseOn()
   for i,square in squares:
-    if mouseOn() == square.name:
+    if mo == square.name:
       return i
+  return -1
 
 proc pieceOn(player:Player,squareNr:int): Area =
+  let (x,y,w,h) = squares[squareNr].area
   if squareNr == 0:
-    let (x,y,w,_) = removedPiecesArea.area
     result = (x+5,y+6+(player.color.ord*15),w-10,12)
   else:
-    let (x,y,w,h) = squares[squareNr].area
     if w == 35:
       result = (x+5,y+6+(player.color.ord*15),w-10,12)
     else:
@@ -180,9 +179,6 @@ proc drawPlayerKind(b:var Boxy,player:Player) =
     fontFace(aovel,30,batchFontColors[player.color])
   )
 
-#[ proc newDialog(area,yes,no:Area,str:string): Dialog =
-  Dialog(area:area,yes:yes,no:no,normal:color(0,0,1),select:color(1,0,0),str:str)
- ]#
 proc newRemovePieceDialog(removePieceOnSquare:int): Dialog =
   let 
     area:Area = (bx+650,by+250,300,100)
@@ -243,7 +239,7 @@ proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
 proc mouseRightClicked() =
   if removePieceDialog != nil:
     destroyDialog(removePieceDialog)
-  if moveSquares.len > 0: 
+  elif moveSquares.len > 0: 
     moveSquares = @[]
   else:
     playSound("carhorn-1")
@@ -253,9 +249,10 @@ proc mouseRightClicked() =
     else:
       nextPlayerTurn()
 
-proc mouseOnPlayer(): Player = 
+proc mouseOnPlayer(): Player =
+  let mo = mouseOn() 
   for player in players:
-    if player.batch != nil and player.batch.name == mouseOn():
+    if player.batch != nil and player.batch.name == mo:
       return player
 
 proc togglePlayerKind() =
@@ -266,46 +263,52 @@ proc togglePlayerKind() =
       playSound("Blop-Mark_DiAngelo")
 
 proc moveReady(): bool = 
-  turn != nil and not isRollingDice() and not turn.diceMoved
-
-proc selectablePieceOn(square:int): bool = 
-  moveSquares.len == 0 or not (square in moveSquares)
-
-proc removablePieceOn(square:int): bool =
-  nrOfPiecesOnSquare(square) == 1 #and not turnPlayerHasPieceOn(square)
+  turn != nil and not isRollingDice()
 
 proc setDiceMoved(square:int) =
   if not turn.diceMoved:
     turn.diceMoved = not (
       square in gasStations and 
-      selectedSquare in highways
+      selectedSquare in highways or
+      selectedSquare == 0
     )
 
 proc moveSelectedPieceTo(toSquare:int) =
   movePiece(selectedSquare,toSquare)
   setDiceMoved(toSquare)
+  if selectedSquare == 0: turn.player.cash -= 5000
   moveSquares = @[]
+  selectedSquare = -1
   playSound("driveBy")
 
 proc checkRemovePieceOn(square:int) =
-  if removablePieceOn(square):
+  if nrOfPiecesOn(square) == 1:
     setRemovePieceOn(square)
     removePieceDialog = newRemovePieceDialog(square)
 
-proc checkPieceSelectOn(square:int) =
+proc selectPieceOn(square:int) =
   selectedSquare = square
-  if moveablePieceOn(selectedSquare):
-    moveSquares = moveToSquares(selectedSquare)
-    playSound("carstart-1")
+  moveSquares = moveToSquares(square)
+  playSound("carstart-1")
+
+proc putPieceOnBoard(square:int): bool =
+  square == 0 and turn.player.cash >= 5000
+
+proc selectablePieceOn(square:int): bool = 
+  moveSquares.len == 0 and turn.player.hasPieceOn(square) and
+  not turn.diceMoved or square in highways or putPieceOnBoard(square)
 
 proc pieceSelectAndMove() =
   let square = mouseOnSquareNr()
-  if square > 0 and moveReady():
+  if moveReady() and square in 0..60:
     if selectablePieceOn(square):
-      checkPieceSelectOn(square)
+      selectPieceOn(square)
     elif square in moveSquares:
       checkRemovePieceOn(square)
       moveSelectedPieceTo(square)
+  else: 
+    selectedSquare = -1
+    moveSquares = @[]
 
 proc mouseOnDice(): bool =
   mouseOn(dieFace1) or mouseOn(dieFace2)
@@ -438,7 +441,6 @@ proc initCityVista*() =
   addImage(boardImage)
   addMouseHandle(newMouseHandle(boardImage))
   squares = zipToAreaHandles(squareNames("dat\\board.txt"),squareAreas())
-  initRemovedPiecesArea()
   initSquareHandles()
   playerBatches = newPlayerBatches()
   wirePlayerBatches()

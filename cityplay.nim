@@ -18,7 +18,7 @@ type
     turnNr*:int
     piecesOnSquares*:array[5,int]
     cash*:int
-  Turn = ref object
+  Turn* = ref object
     nr*:int
     player*:Player
     diceMoved*:bool
@@ -31,7 +31,7 @@ type
   RemovePiece* = tuple[player:Player,piece:int]
 
 const 
-  defaultPlayerKinds = [human,human,human,human,human,human]
+  defaultPlayerKinds = [human,human,none,none,none,none]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
   bars* = [1,16,18,20,28,35,40,46,51,54]
@@ -39,7 +39,7 @@ const
 
 var
   removePiece*:RemovePiece
-  playerKinds*:array[1..6,PlayerKind]
+  playerKinds*:array[1..6,PlayerKind] = defaultPlayerKinds
   dice*:array[1..2,int] = [3,4]
   dieRollFrame* = maxRollFrames
   players*:array[1..6,Player]
@@ -64,10 +64,11 @@ proc newDefaultPlayers(): array[1..6,Player] =
   for i in 1..6:
     result[i] = Player(
       nr:i,
-      kind:defaultPlayerKinds[i-1],
+      kind:playerKinds[i],
       color:PlayerColors(i-1),
       piecesOnSquares:highways
     )
+    echo players[i].kind
 
 proc newPlayers*(kind:array[6,PlayerKind]): array[1..6,Player] =
   randomize()
@@ -123,35 +124,29 @@ proc playersPiecesOnSquare(square:int): array[1..6,int] =
   for i,player in players:
     result[i] = player.piecesOnSquare(square)
 
-proc nrOfPiecesOnSquare*(square:int): int =
+proc nrOfPiecesOn*(square:int): int =
   playersPiecesOnSquare(square).sum
 
-proc turnPlayerHasPieceOn*(square:int): bool =
-  turn.player.piecesOnSquares
-  .filter(p => p != 0)
-  .any(p => p == square)
-
-proc hasLegalMove(square:int): bool =
-  square in highways or not turn.diceMoved
-
-proc moveablePieceOn*(square:int): bool =
-  turnPlayerHasPieceOn(square) and 
-  hasLegalMove(square)
+proc hasPieceOn*(player:Player,square:int): bool =
+  player.piecesOnSquares.any(p => p == square)
 
 func moveToSquare(fromSquare:int,die:int): int =
   result = fromSquare+die
   if result > 60: result -= 60
 
 proc moveToSquares(fromSquare:int,dice:array[2,int]): seq[int] =
-  if fromSquare > 0 and fromSquare <= 60:
-    if fromSquare in highways: result.add(gasStations)
+  if fromSquare == 0: 
+    result.add(highways)
+    result.add(gasStations)
+  elif fromSquare in highways: 
+    result.add(gasStations)
+  if not turn.diceMoved:
     for die in dice:
-      result.add(moveToSquare(fromSquare,die))
-      if fromSquare in highways:
-        result.add(gasStations.map(gasStation => moveToSquare(gasStation,die)))
-    result = result.filterIt(it != fromSquare)
-  else:
-    return @[]
+      if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
+      if fromSquare in highways or fromsquare == 0:
+        if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
+        result.add(gasStations.mapIt(moveToSquare(it,die)))
+    result = result.filterIt(it != fromSquare).deduplicate()
 
 proc toggleKind*(kind:PlayerKind): PlayerKind =
   case kind

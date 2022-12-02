@@ -28,5 +28,5 @@ proc initVoracity() =
 
 initVoracity()
 while not window.closeRequested:
-  sleep(15)
+  sleep(30)
   pollEvents()
