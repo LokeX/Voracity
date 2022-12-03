@@ -46,7 +46,7 @@ let
   window* = newWindow(
     "Voracity",
     ivec2(800,600),
-    WindowStyle.Decorated, 
+    WindowStyle.DecoratedResizable, 
     visible = false
   )
   scr = getScreens()[0]

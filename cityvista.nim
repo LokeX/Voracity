@@ -14,8 +14,8 @@ type
 
 const
   bh = 100
-  (wx,wy) = (25,65)
-  (bx,by) = (wx,wy+bh+25)
+  (wx,wy) = (220,60)
+  (bx,by) = (wx,wy)
   sqOff = 43
   (tbxo,lryo) = (220,172)
   (tyo,byo) = (70,690)
@@ -58,12 +58,14 @@ var
   squares:array[0..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
   removePieceDialog:Dialog
+#  lastButton:Button
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
     result[index] = newAreaHandle(
       "playerbatch"&index.intToStr,
-      15+bx+((index-1)*200),wy,170,bh
+      15,wy+((index-1)*150),170,bh
+#      15+bx+((index-1)*200),wy,170,bh
     )
     addMouseHandle(newMouseHandle(result[index]))
 
@@ -424,10 +426,13 @@ proc draw (b:var Boxy) =
   b.drawTopBar()
 #  b.showFonts()
 
-var dieEdit:int
+var 
+  dieEdit:int
+  lastButton:Button
 
 proc keyboard (k:KeyEvent) =
   if k.button == KeyN:
+    playSound("carhorn-1")
     newGameSetup()
   if k.button == ButtonUnknown and not isRollingDice():
     let c = k.rune.toUTF8
@@ -442,6 +447,7 @@ proc keyboard (k:KeyEvent) =
         dieEdit = 0
     else:
       dieEdit = 0
+  lastButton = k.button
 
 proc mouse (m:MouseEvent) =
 #  if removePieceDialog != nil: removePieceDialog.mouseOver()

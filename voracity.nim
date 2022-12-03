@@ -9,6 +9,8 @@ let
 proc keyboard (k:KeyEvent) =
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
+  else:
+    echo k.button
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
