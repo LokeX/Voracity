@@ -31,7 +31,7 @@ const
     color(0,0,50),color(50,50,0),
     color(255,255,255),color(1,1,1)
   ]
-  batchFontColors:array[PlayerColors,Color] = [
+  contrastColors:array[PlayerColors,Color] = [
     color(1,1,1),
     color(255,255,255),
     color(1,1,1),
@@ -79,6 +79,11 @@ proc newGame() =
   nextPlayerTurn()
   wirePlayerBatches()
 #  board = putPiecesOnBoard()
+
+proc newGameSetup*() =
+  turn = nil
+  players = newDefaultPlayers()
+  wirePlayerBatches()
 
 proc squareNames(filePath:string): seq[string] =
   var 
@@ -148,7 +153,7 @@ proc drawBatchText(b:var Boxy,player:Player) =
       offset.x.toFloat,
       offset.y.toFloat+(i.toFloat*20),
       line,
-      fontFace(roboto,20,batchFontColors[player.color])
+      fontFace(roboto,20,contrastColors[player.color])
     )
 
 proc drawTurnCursor(b:var Boxy,player:Player) =
@@ -156,7 +161,7 @@ proc drawTurnCursor(b:var Boxy,player:Player) =
   if player.nr == turn.player.nr:
     let time = cpuTime() - oldTime
     if time > 0 and time < 1:
-      b.drawRect((x+w-20,y+5,15,15).toRect,batchFontColors[player.color])
+      b.drawRect((x+w-20,y+5,15,15).toRect,contrastColors[player.color])
     elif time >= 2:
       oldTime = cpuTime()
 
@@ -176,7 +181,7 @@ proc drawPlayerKind(b:var Boxy,player:Player) =
     (player.batch.area.x+offset[playerKinds[player.nr].ord]).toFloat,
     (player.batch.area.y+30).toFloat,
     $playerKinds[player.nr],
-    fontFace(aovel,30,batchFontColors[player.color])
+    fontFace(aovel,30,contrastColors[player.color])
   )
 
 proc newRemovePieceDialog(removePieceOnSquare:int): Dialog =
@@ -381,6 +386,8 @@ proc drawPiecesOnSquares(b:var Boxy) =
           (x,y,w,h) = player.pieceOn(square)
           nrOfplayersPiecesOnSquare = player.piecesOnSquare(square)
         b.drawRect((x,y,w,h).toRect,player.getColor)
+        if turn != nil and player.nr == turn.player.nr and square == selectedSquare:
+          b.drawRect((x+3,y+3,w-6,h-6).toRect,contrastColors[player.color])
         if nrOfplayersPiecesOnSquare > 1:
           b.drawText(
             $player.color&"nrofpieceson"&square.intToStr,
@@ -420,6 +427,8 @@ proc draw (b:var Boxy) =
 var dieEdit:int
 
 proc keyboard (k:KeyEvent) =
+  if k.button == KeyN:
+    newGameSetup()
   if k.button == ButtonUnknown and not isRollingDice():
     let c = k.rune.toUTF8
     var i:int

@@ -61,7 +61,7 @@ proc startDiceRoll*() =
     dieRollFrame = 0
     playSound("wuerfelbecher")
 
-proc newDefaultPlayers(): array[1..6,Player] =
+proc newDefaultPlayers*(): array[1..6,Player] =
   for i in 1..6:
     result[i] = Player(
       nr:i,
