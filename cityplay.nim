@@ -31,6 +31,7 @@ type
   RemovePiece* = tuple[player:Player,piece:int]
 
 const 
+  piecePrice* = 5000
   defaultPlayerKinds = [human,human,none,none,none,none]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]

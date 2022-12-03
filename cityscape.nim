@@ -46,7 +46,7 @@ let
   window* = newWindow(
     "Voracity",
     ivec2(800,600),
-    WindowStyle.DecoratedResizable, 
+    WindowStyle.Decorated, 
     visible = false
   )
   scr = getScreens()[0]
@@ -72,6 +72,10 @@ var
   bxy = newBoxy()
 
 bxy.scale(boxyScale)
+
+proc windowWidth*(): int = cast[int](scrWidth-(scrWidth div 20))
+
+proc windowHeight*(): int = cast[int](scrHeight-(scrHeight div 8))
 
 proc winSize*(): IVec2 =
   ivec2(winWidth,winHeight)

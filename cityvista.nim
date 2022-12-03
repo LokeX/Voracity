@@ -14,7 +14,7 @@ type
 
 const
   bh = 100
-  (wx,wy) = (25,25)
+  (wx,wy) = (25,65)
   (bx,by) = (wx,wy+bh+25)
   sqOff = 43
   (tbxo,lryo) = (220,172)
@@ -27,8 +27,8 @@ const
   selColor = color(255,255,255,100)
 
   playerColors*:array[PlayerColors,Color] = [
-    color(1,0,0),color(0,1,0),
-    color(0,0,1),color(1,1,0),
+    color(50,0,0),color(0,50,0),
+    color(0,0,50),color(50,50,0),
     color(255,255,255),color(1,1,1)
   ]
   batchFontColors:array[PlayerColors,Color] = [
@@ -201,7 +201,7 @@ proc newRemovePieceDialog(removePieceOnSquare:int): Dialog =
     str:str,
   )
 
-proc destroyDialog(dialog:var Dialog) = 
+proc endDialog(dialog:var Dialog) = 
   removeMouseHandle(dialog.no.name)
   removeMouseHandle(dialog.yes.name)
   dialog = nil
@@ -238,7 +238,7 @@ proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
 
 proc mouseRightClicked() =
   if removePieceDialog != nil:
-    destroyDialog(removePieceDialog)
+    endDialog(removePieceDialog)
   elif moveSquares.len > 0: 
     moveSquares = @[]
   else:
@@ -276,7 +276,7 @@ proc setDiceMoved(square:int) =
 proc moveSelectedPieceTo(toSquare:int) =
   movePiece(selectedSquare,toSquare)
   setDiceMoved(toSquare)
-  if selectedSquare == 0: turn.player.cash -= 5000
+  if selectedSquare == 0: turn.player.cash -= piecePrice
   moveSquares = @[]
   selectedSquare = -1
   playSound("driveBy")
@@ -291,12 +291,12 @@ proc selectPieceOn(square:int) =
   moveSquares = moveToSquares(square)
   playSound("carstart-1")
 
-proc putPieceOnBoard(square:int): bool =
-  square == 0 and turn.player.cash >= 5000
+proc isRemovedPiece(square:int): bool =
+  square == 0 and turn.player.cash >= piecePrice
 
 proc selectablePieceOn(square:int): bool = 
   moveSquares.len == 0 and turn.player.hasPieceOn(square) and
-  not turn.diceMoved or square in highways or putPieceOnBoard(square)
+  not turn.diceMoved or square in highways or isRemovedPiece(square)
 
 proc pieceSelectAndMove() =
   let square = mouseOnSquareNr()
@@ -319,11 +319,11 @@ proc diceRoll() =
 proc dialog() =
   if mouseOn() == removePieceDialog.yes.name:
     removePlayersPiece()
-    destroyDialog(removePieceDialog)
+    endDialog(removePieceDialog)
     playSound("Deanscream-2")
   else:
     if mouseOn() == removePieceDialog.no.name:
-      destroyDialog(removePieceDialog)
+      endDialog(removePieceDialog)
 
 proc mouseLeftClicked() =
   if removePieceDialog != nil:
@@ -390,12 +390,20 @@ proc drawPiecesOnSquares(b:var Boxy) =
             fontFace(ibmB,10,color(1,1,1))
           )
 
-proc drawMisc(b:var Boxy) =
-  b.drawText("text7",800,1025,mouseOn(),aovel60White)
-  b.drawText("text9",1400,1025,$(if mouseOnPlayer()!=nil:mouseOnPlayer() else:players[1]).color,aovel60White)
-  b.drawText("text8",400,1025,
+proc drawTopBar(b:var Boxy) =
+  b.drawRect((0,0,windowWidth(),40).toRect,color(75,150,240))
+  b.drawText("text7",10,5,mouseOn(),fontFace(ibmB,20,color(1,1,1)))
+  b.drawText(
+    "text9",
+    300,5,
+    $(if mouseOnPlayer()!=nil:mouseOnPlayer() else:players[1]).color,
+    fontFace(ibmB,20,color(1,1,1))
+  )
+  b.drawText(
+    "text8",
+    400,5,
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
-    aovel60White
+    fontFace(ibmB,20,color(1,1,1))
   )
 
 proc draw (b:var Boxy) =
@@ -406,7 +414,7 @@ proc draw (b:var Boxy) =
   b.drawPiecesOnSquares()
   if removePieceDialog != nil: 
     b.drawDialog(removePieceDialog,"removepiece")
-  b.drawMisc()
+  b.drawTopBar()
 #  b.showFonts()
 
 var dieEdit:int
