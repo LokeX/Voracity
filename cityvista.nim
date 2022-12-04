@@ -80,7 +80,7 @@ proc newGame() =
   players = newPlayers(playerKinds)
   nextPlayerTurn()
   wirePlayerBatches()
-#  board = putPiecesOnBoard()
+  shuffleBlueCards()
 
 proc newGameSetup*() =
   turn = nil
@@ -284,6 +284,8 @@ proc moveSelectedPieceTo(toSquare:int) =
   movePiece(selectedSquare,toSquare)
   setDiceMoved(toSquare)
   if selectedSquare == 0: turn.player.cash -= piecePrice
+  if toSquare in bars: inc nrOfUndrawnBlueCards
+  echo "undrawn cards: ",nrOfUndrawnBlueCards
   moveSquares = @[]
   selectedSquare = -1
   playSound("driveBy")

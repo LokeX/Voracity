@@ -18,6 +18,7 @@ type
     batch*:AreaHandle
     turnNr*:int
     piecesOnSquares*:array[5,int]
+    cards*:seq[BlueCard]
     cash*:int
   Turn* = ref object
     nr*:int
@@ -31,16 +32,15 @@ type
   Board = array[1..60,Square]
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
-  BlueCard = ref object
-    title:string
-    kind:string
-    squares:tuple[
+  BlueCard* = ref object
+    title*:string
+    kind*:string
+    squares*:tuple[
       required,
       oneInMoreRequired,
       pricedOptional:seq[int]
     ]
-    cash:int
-
+    cash*:int
 
 const 
   piecePrice* = 5000
@@ -59,6 +59,7 @@ var
   turn*:Turn = nil
   board:Board
   blueCards*:seq[BlueCard]
+  nrOfUndrawnBlueCards*:int
 
 proc readFile(path:string): seq[string] =
   var 
@@ -66,6 +67,19 @@ proc readFile(path:string): seq[string] =
   while not endOfFile(text):
     result.add(text.readLine)
   close(text)
+
+proc shuffleBlueCards*() =
+  blueCards.shuffle()
+  for card in blueCards:
+    echo card.title
+
+proc countNrOfUndrawnBlueCards(): int =
+  turn.player.piecesOnSquares.countIt(it in bars)
+
+proc drawBlueCard*(): BlueCard = 
+  if nrOfUndrawnBlueCards > 0:
+    result = blueCards.pop
+    dec nrOfUndrawnBlueCards
 
 func parseProtoCards(lines:seq[string]): seq[ProtoCard] =
   var 
@@ -152,7 +166,9 @@ proc nextPlayerTurn*() =
       nextPlayer = if isLastPlayer: contesters[0] else:
         contesters[contesters.mapIt(it.nr).find(turn.player.nr)+1]
     turn = Turn(nr:turnNr,player:nextPlayer)
-  turn.player.turnNr = turn.nr  
+  turn.player.turnNr = turn.nr 
+  nrOfUndrawnBlueCards = countNrOfUndrawnBlueCards() 
+  echo "undrawn cards: ",nrOfUndrawnBlueCards
 
 proc removePieceOn(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none):

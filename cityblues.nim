@@ -1,7 +1,9 @@
 import cityscape
 import cityvista
+import cityplay
 
 let
+  bluePile = newAreaHandle("bluepile",850,500,110,180)
   planbg = newImageHandle((
     "planbg", 
     readImage("pics\\planbg2.jpg")),
@@ -17,6 +19,9 @@ proc keyboard (k:KeyEvent) =
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
+    if mouseOn() == "bluepile" and nrOfUndrawnBlueCards > 0:
+      let card = drawBlueCard()
+      echo card.title
     echo "pos: ",m.pos
 
 proc draw (b:var Boxy) =
@@ -24,5 +29,6 @@ proc draw (b:var Boxy) =
   b.drawAreaShadow(planbg.area,7,color(255,255,255,100))
   
 proc initCityBlues*() =
+  addMouseHandle(newMouseHandle(bluePile))
   addImage(planbg)
   addCall(newCall("cityblues",keyboard,mouse,draw))
