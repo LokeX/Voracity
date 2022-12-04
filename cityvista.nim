@@ -167,12 +167,12 @@ proc drawTurnCursor(b:var Boxy,player:Player) =
     elif time >= 2:
       oldTime = cpuTime()
 
-proc drawAreaShadow(b:var Boxy,area:Area,offset:int,color:Color) =
+proc drawAreaShadow*(b:var Boxy,area:Area,offset:int,color:Color) =
   let areaShadows = area.areaShadows(offset)
   b.drawRect(areaShadows.shadowRight.toRect,color)
   b.drawRect(areaShadows.shadowBottom.toRect,color)
 
-proc drawBatch(b:var Boxy,player:Player) =
+proc drawBatch*(b:var Boxy,player:Player) =
   b.drawRect(player.batch.area.toRect,player.getColor)
   b.drawAreaShadow(player.batch.area,10,color(255,255,255,100))
 

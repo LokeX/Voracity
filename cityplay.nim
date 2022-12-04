@@ -1,4 +1,5 @@
 import cityscape
+import strutils
 import sequtils
 import random
 import sugar
@@ -29,6 +30,17 @@ type
     nrOfPlayerPieces:array[6,int]
   Board = array[1..60,Square]
   RemovePiece* = tuple[player:Player,piece:int]
+  ProtoCard = array[4,string]
+  BlueCard = ref object
+    title:string
+    kind:string
+    squares:tuple[
+      required,
+      oneInMoreRequired,
+      pricedOptional:seq[int]
+    ]
+    cash:int
+
 
 const 
   piecePrice* = 5000
@@ -46,6 +58,45 @@ var
   players*:array[1..6,Player]
   turn*:Turn = nil
   board:Board
+  blueCards*:seq[BlueCard]
+
+proc readFile(path:string): seq[string] =
+  var 
+    text = open(path,fmRead)
+  while not endOfFile(text):
+    result.add(text.readLine)
+  close(text)
+
+func parseProtoCards(lines:seq[string]): seq[ProtoCard] =
+  var 
+    cardLine:int
+    protoCard:ProtoCard 
+  for line in lines:
+    protocard[cardLine] = line
+    if cardLine == 3:
+      result.add(protoCard)
+      cardLine = 0
+    else:
+      inc cardLine
+
+func getParsedInt(str:string): int = 
+  try:str.parseInt except ValueError: 0
+
+func parseSquares(str:string,closures:array[2,char]): seq[int] =
+  str[str.find(closures[0])+1..str.find(closures[1])-1]
+  .split(',').mapIt(it.getParsedInt())
+
+func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
+  var a,b:seq[int]
+  for protoCard in protoCards:
+    result.add(
+      BlueCard(
+        kind:protoCard[0],
+        title:protoCard[1],
+        squares:(parseSquares(protoCard[2],['{','}']),a,b),
+        cash:getParsedInt(protoCard[3])
+      )
+    )
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)
@@ -164,4 +215,9 @@ proc movePiece*(fromSquare,toSquare:int) =
 
 players = newDefaultPlayers()
 board = putPiecesOnBoard() 
-  
+blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
+for card in blueCards:
+  echo card.title
+  echo card.kind
+  echo card.squares.required
+  echo card.cash

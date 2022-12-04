@@ -1,6 +1,7 @@
 import cityscape
 import citytext
 import cityvista
+import cityblues
 import os
 
 let
@@ -24,6 +25,7 @@ proc initVoracity() =
   addCall(newCall("voracity",keyboard,mouse,draw))
   initCityText()
   initCityVista()
+  initCityBlues()
   window.visible = true
   echo "nr of recievers: ",calls.len()
   echo "nr of mouse handles:",mouseHandles.len()
