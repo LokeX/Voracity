@@ -76,9 +76,9 @@ proc shuffleBlueCards*() =
 proc countNrOfUndrawnBlueCards(): int =
   turn.player.piecesOnSquares.countIt(it in bars)
 
-proc drawBlueCard*(): BlueCard = 
+proc drawBlueCard*() = 
   if nrOfUndrawnBlueCards > 0:
-    result = blueCards.pop
+    turn.player.cards.add(blueCards.pop)
     dec nrOfUndrawnBlueCards
 
 func parseProtoCards(lines:seq[string]): seq[ProtoCard] =
@@ -97,8 +97,11 @@ func getParsedInt(str:string): int =
   try:str.parseInt except ValueError: 0
 
 func parseSquares(str:string,closures:array[2,char]): seq[int] =
-  str[str.find(closures[0])+1..str.find(closures[1])-1]
-  .split(',').mapIt(it.getParsedInt())
+  let (f,l) = (str.find(closures[0])+1,str.find(closures[1])-1)
+  if -1 in [f,l,l-f]:
+    result = @[]
+  else:
+    result = str[f..l].split(',').mapIt(it.getParsedInt())
 
 func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
   var a,b:seq[int]

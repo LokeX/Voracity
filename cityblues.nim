@@ -20,8 +20,10 @@ proc keyboard (k:KeyEvent) =
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState):
     if mouseOn() == "bluepile" and nrOfUndrawnBlueCards > 0:
-      let card = drawBlueCard()
-      echo card.title
+      drawBlueCard()
+      echo $turn.player.color&" has cards:"
+      for card in turn.player.cards:
+        echo card.title
     echo "pos: ",m.pos
 
 proc draw (b:var Boxy) =
