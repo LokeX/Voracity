@@ -351,7 +351,7 @@ proc rotateDie(b:var Boxy,die:ImageHandle) =
     tint = color(1,1,1,41-dieRollFrame.toFloat)
   )
 
-func imagePos(image:ImageHandle): Vec2 =
+func imagePos*(image:ImageHandle): Vec2 =
   vec2(image.area.x.toFloat,image.area.y.toFloat)
 
 proc drawDice(b:var Boxy) =

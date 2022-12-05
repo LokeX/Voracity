@@ -51,6 +51,7 @@ proc showFonts(b:var Boxy) =
     b.drawText("font4",1500,200,"This is font: aovel30White",aovel30White)
     b.drawText("font5",1500,250,"This is font: roboto20White",roboto20White)
     b.drawText("font6",1500,300,"This is font: ibm20White",ibm20White)
+    b.drawText("font7",1500,1000,"This is font: point40White",point40White)
 
 proc initCityText*() =
   showText = false

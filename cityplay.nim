@@ -233,6 +233,7 @@ proc movePiece*(fromSquare,toSquare:int) =
 players = newDefaultPlayers()
 board = putPiecesOnBoard() 
 blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
+echo "nr of blues: ",blueCards.len
 for card in blueCards:
   echo card.title
   echo card.kind

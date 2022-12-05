@@ -1,6 +1,7 @@
 import cityscape
 import cityvista
 import cityplay
+import citytext
 import strutils
 
 const
@@ -50,8 +51,15 @@ proc mouse (m:MouseEvent) =
 proc draw (b:var Boxy) =
   b.drawImage("planbg",vec2(planbg.area.x.toFloat,planbg.area.y.toFloat))
   b.drawAreaShadow(planbg.area,7,color(255,255,255,100))
-  for blue in miniBlues:
-    b.drawImage(blue.img.name,vec2(blue.area.x.toFloat,blue.area.y.toFloat))
+  if turn != nil: 
+    for i,blue in turn.player.cards:
+      b.drawImage(miniBlues[i].img.name,imagePos(miniBlues[i]))
+      b.drawText(
+        "title"&i.intToStr,
+        (miniBlues[i].area.x+5).toFloat,
+        (miniBlues[i].area.y+5).toFloat,blue.title,
+        point40White
+      )
   
 proc initCityBlues*() =
   miniBlues = newMiniBlues()
