@@ -98,9 +98,7 @@ func getParsedInt(str:string): int =
 
 func parseSquares(str:string,closures:array[2,char]): seq[int] =
   let (f,l) = (str.find(closures[0])+1,str.find(closures[1])-1)
-  if -1 in [f,l,l-f]:
-    result = @[]
-  else:
+  if -1 in [f,l,l-f]: result = @[] else:
     result = str[f..l].split(',').mapIt(it.getParsedInt())
 
 func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
