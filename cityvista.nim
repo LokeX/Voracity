@@ -41,10 +41,11 @@ const
   ]
   
 let
-  aovel = readTypeface("fonts\\AovelSansRounded-rdDL.ttf")
-  cabal = readTypeface("fonts\\Cabal-w5j3.ttf")
-  ibmB = readTypeface("fonts\\IBMPlexMono-Bold.ttf")
-  roboto = readTypeface("fonts\\Roboto-Regular_1.ttf")
+  aovel* = readTypeface("fonts\\AovelSansRounded-rdDL.ttf")
+  cabal* = readTypeface("fonts\\Cabal-w5j3.ttf")
+  ibmB* = readTypeface("fonts\\IBMPlexMono-Bold.ttf")
+  roboto* = readTypeface("fonts\\Roboto-Regular_1.ttf")
+  point* = readTypeface("fonts\\ToThePointRegular-n9y4.ttf")
 
   boardImage = newImageHandle(("board", readImage("pics\\engboard.jpg")),bx,by)
   dieFaceImages = loadImages("pics\\diefaces\\*.gif")
@@ -55,10 +56,9 @@ var
   moveSquares:seq[int]
   selectedSquare:int = -1
   oldTime = cpuTime()
-  squares:array[0..60,AreaHandle]
+  squares*:array[0..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
-  removePieceDialog:Dialog
-#  lastButton:Button
+  removePieceDialog*:Dialog
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -102,7 +102,7 @@ func zipToAreaHandles(names:seq[string],areas:openArray[Area]): array[0..60,Area
     result[i] = newAreaHandle(square)
 
 func squareAreas(): array[0..60,Area] =
-  result[0] = (bx+1225,by,35,100)
+  result[0] = (bx+1225,by+150,35,100)
   for i in 0..17:
     result[37+i] = (bx+tbxo+(i*sqOff),by+tyo,35,100)
     result[24-i] = (bx+tbxo+(i*sqOff),by+byo,35,100)
@@ -243,11 +243,15 @@ proc drawDialog(b:var Boxy,dialog:Dialog,key:string) =
       fontFace(roboto,16,color(1,1,1))
     )
 
+proc eraseSquareSelection() =
+  selectedSquare = -1
+  moveSquares = @[]
+
 proc mouseRightClicked() =
   if removePieceDialog != nil:
     endDialog(removePieceDialog)
   elif moveSquares.len > 0: 
-    moveSquares = @[]
+    eraseSquareSelection()
   else:
     playSound("carhorn-1")
     oldTime = cpuTime()
@@ -284,10 +288,13 @@ proc moveSelectedPieceTo(toSquare:int) =
   movePiece(selectedSquare,toSquare)
   setDiceMoved(toSquare)
   if selectedSquare == 0: turn.player.cash -= piecePrice
-  if toSquare in bars: inc nrOfUndrawnBlueCards
+  if toSquare in bars: 
+    inc nrOfUndrawnBlueCards
+    playSound("can-open-1")
+  if cashInPlans() > 0:
+    playSound("coins-to-table-2")
   echo "undrawn cards: ",nrOfUndrawnBlueCards
-  moveSquares = @[]
-  selectedSquare = -1
+  eraseSquareSelection()
   playSound("driveBy")
 
 proc checkRemovePieceOn(square:int) =

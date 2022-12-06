@@ -59,6 +59,7 @@ var
   turn*:Turn = nil
   board:Board
   blueCards*:seq[BlueCard]
+  usedCards*:seq[BlueCard]
   nrOfUndrawnBlueCards*:int
 
 proc readFile(path:string): seq[string] =
@@ -78,8 +79,20 @@ proc countNrOfUndrawnBlueCards(): int =
 
 proc drawBlueCard*() = 
   if nrOfUndrawnBlueCards > 0:
+    if blueCards.len == 0:
+      blueCards.add(usedCards)
+      blueCards.shuffle()
     turn.player.cards.add(blueCards.pop)
     dec nrOfUndrawnBlueCards
+
+proc discardCards() =
+  while turn.player.cards.len > 3:
+    usedCards.add(turn.player.cards.pop)
+
+proc discardCard*(index:int) =
+  if index < turn.player.cards.len:
+    usedCards.add(turn.player.cards[index])
+    turn.player.cards.del(index)
 
 func parseProtoCards(lines:seq[string]): seq[ProtoCard] =
   var 
@@ -112,6 +125,30 @@ func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
         cash:getParsedInt(protoCard[3])
       )
     )
+
+proc planedSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
+  let squares = plan.squares.required.deduplicate()
+  (squares,squares.mapIt(plan.squares.required.count(it)))
+
+proc isCashable(plan:BlueCard): bool =
+  let 
+    (squares,nrOfPiecesRequired) = plan.planedSquares()
+    nrOfPiecesOnSquares = squares.mapIt(turn.player.piecesOnSquares.count(it))
+  toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
+
+proc playerPlans(): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
+  for card in turn.player.cards:
+    if card.isCashable:
+      result.cashablePlans.add(card)
+    else:
+      result.notCashablePlans.add(card)
+
+proc cashInPlans*(): int =
+  let (cashablePlans,notCashablePlans) = playerPlans()
+  usedCards.add(cashablePlans)
+  turn.player.cards = notCashablePlans
+  turn.player.cash += cashablePlans.mapIt(it.cash).sum
+  cashablePlans.len
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)
@@ -158,6 +195,7 @@ proc putPiecesOnBoard(): Board =
         inc result[square].nrOfPlayerPieces[player.nr-1]
 
 proc nextPlayerTurn*() =
+  if turn != nil: discardCards()
   startDiceRoll()
   let contesters = players.filterIt(it.kind != none)
   if turn == nil: turn = Turn(nr:1,player:contesters[0]) else:
