@@ -55,6 +55,8 @@ proc mouse (m:MouseEvent) =
       if mouseOn() == "bluepile" and nrOfUndrawnBlueCards > 0:
         drawBlueCard()
         playSound("page-flip-2")
+        if cashInPlans() > 0:
+          playSound("coins-to-table-2")
         echo $turn.player.color&" has cards:"
         for card in turn.player.cards:
           echo card.title

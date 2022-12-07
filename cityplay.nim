@@ -89,14 +89,6 @@ proc shuffleBlueCards*() =
 proc countNrOfUndrawnBlueCards(): int =
   turn.player.piecesOnSquares.countIt(it in bars)
 
-proc drawBlueCard*() = 
-  if nrOfUndrawnBlueCards > 0:
-    if blueCards.len == 0:
-      blueCards.add(usedCards)
-      blueCards.shuffle()
-    turn.player.cards.add(blueCards.pop)
-    dec nrOfUndrawnBlueCards
-
 proc discardCards() =
   while turn.player.cards.len > 3:
     usedCards.add(turn.player.cards.pop)
@@ -161,6 +153,14 @@ proc cashInPlans*(): int =
   turn.player.cards = notCashablePlans
   turn.player.cash += cashablePlans.mapIt(it.cash).sum
   cashablePlans.len
+
+proc drawBlueCard*() = 
+  if nrOfUndrawnBlueCards > 0:
+    if blueCards.len == 0:
+      blueCards.add(usedCards)
+      blueCards.shuffle()
+    turn.player.cards.add(blueCards.pop)
+    dec nrOfUndrawnBlueCards
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)
