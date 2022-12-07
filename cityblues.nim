@@ -94,7 +94,7 @@ proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
   for s in ps:
     b.drawRect(squares[s].area.toRect(),color(0,1,0,150))
   b.drawRect(a.toRect,color(1,1,1))
-  #b.drawAreaShadow(a,2,color(0,0,0,150))
+  b.drawAreaShadow(a,2,color(0,0,0,150))
   for i,text in sp:
     b.drawText(
       "planedSquares"&i.intToStr,

@@ -305,9 +305,10 @@ proc moveSelectedPieceTo(toSquare:int) =
   if gameWon(): playSound("applause-2")
 
 proc checkRemovePieceOn(square:int) =
-  if nrOfPiecesOn(square) == 1 and not square in highways and not square in gasStations:
-    setRemovePieceOn(square)
-    removePieceDialog = newRemovePieceDialog(square)
+  if nrOfPiecesOn(square) == 1:
+    if square notin highways and square notin gasStations:
+      setRemovePieceOn(square)
+      removePieceDialog = newRemovePieceDialog(square)
 
 proc selectPieceOn(square:int) =
   selectedSquare = square

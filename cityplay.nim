@@ -43,8 +43,8 @@ type
     cash*:int
 
 const 
-  piecePrice* = 5000
-  cashToWin = [250000,500000]
+  piecePrice* = 5_000
+  cashToWin = [50_000,100_000,250_000,500_000]
   defaultPlayerKinds = [human,human,none,none,none,none]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
@@ -52,7 +52,7 @@ const
   maxRollFrames = 40
 
 var
-  cashToWinSelected:int
+  cashToWinSelected = 2
   removePiece*:RemovePiece
   playerKinds*:array[1..6,PlayerKind] = defaultPlayerKinds
   dice*:array[1..2,int] = [3,4]
