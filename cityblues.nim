@@ -6,29 +6,30 @@ import strutils
 import sequtils
 
 const
-  mbx = 1550
-  mby = 60
+  mbx = bx+1300
+  mby = by
 
 let
-  bluePile = newAreaHandle("bluepile",850,500,110,180)
+  miniBlue = readImage("pics\\miniplanbg.jpg")
+  bluePile = newAreaHandle("bluepile",bx+630,by+440,110,180)
+  usedPile = newImageHandle(("usedpile",miniBlue),bx+805,by+440)
   planbg = newImageHandle((
     "planbg", 
     readImage("pics\\planbg2.jpg")),
-    460,
-    280
+    bx+240,
+    by+220
   )
 
 var
   miniBlues:seq[ImageHandle]
 
 proc newMiniBlues(): seq[ImageHandle] =
-  let miniBlue = readImage("pics\\miniplanbg.jpg")
-  for i in 0..11:
+  for i in 0..7:
     result.add(
       newImageHandle(
-        ("miniblues"&i.intToStr,miniBlue.copy()),
-        mbx+(((i+2) mod 2)*95),
-        mby+((i div 2)*145)
+        ("miniblues"&i.intToStr,miniBlue),
+        mbx+(((i+2) mod 2)*(miniBlue.width+20)),
+        mby+((i div 2)*(miniBlue.height+20))
       )
     )
     addImage(result[i])
@@ -74,52 +75,75 @@ proc squaredPlans(plan:BlueCard): seq[string] =
 #  echo s,p
   toSeq(0..s.len-1).mapIt(p[it].intToStr&" piece on: "&squares[s[it]].name)
 
+proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
+  b.drawImage("planbg",imagePos(planbg))
+  b.drawAreaShadow(planbg.area,7,color(255,255,255,100))
+  b.drawText(
+    "bigcardTitle",
+    (planbg.area.x+10).toFloat,
+    planbg.area.y.toFloat,
+    bigBlue.title,
+    fontFace(point,48,color(0,0,1))
+  )
+  let 
+    sp = squaredPlans(bigBlue)
+    a:Area = (planbg.area.x+10,planbg.area.y+90,planbg.area.w-20,(sp.len+1)*20)
+    (ps,_) = planedSquares(bigBlue)
+  for s in ps:
+    b.drawRect(squares[s].area.toRect(),color(0,1,0,150))
+  b.drawRect(a.toRect,color(1,1,1))
+  #b.drawAreaShadow(a,2,color(0,0,0,150))
+  for i,text in sp:
+    b.drawText(
+      "planedSquares"&i.intToStr,
+      (planbg.area.x+20).toFloat,
+      (planbg.area.y+100+(i*20)).toFloat,
+      text,
+      fontFace(roboto,15,color(0,0,0))
+    )
+
 proc drawBigBlue(b:var Boxy) =
   if turn.player.cards.len > 0:
     let mo = mouseOnMiniBlueNr()
     if mo > -1 and mo < turn.player.cards.len:
-      b.drawImage("planbg",vec2(planbg.area.x.toFloat,planbg.area.y.toFloat))
-      b.drawAreaShadow(planbg.area,7,color(255,255,255,100))
-      b.drawText(
-        "bigcardTitle",
-        (planbg.area.x+10).toFloat,
-        planbg.area.y.toFloat,
-        turn.player.cards[mo].title,
-        fontFace(point,48,color(0,0,1))
-      )
-      let sp = squaredPlans(turn.player.cards[mo])
-      let a:Area = (planbg.area.x+10,planbg.area.y+90,planbg.area.w-20,(sp.len+1)*20)
-      b.drawRect(a.toRect,color(1,1,1))
-      #b.drawAreaShadow(a,2,color(0,0,0,150))
-      for i,text in sp:
-        b.drawText(
-          "planedSquares"&i.intToStr,
-          (planbg.area.x+20).toFloat,
-          (planbg.area.y+100+(i*20)).toFloat,
-          text,
-          fontFace(roboto,15,color(0,0,0))
-        )
+      b.drawBigBlue(turn.player.cards[mo])
+
+proc drawMiniBlue(b:var Boxy,miniBlue:BlueCard,ih:ImageHandle) =
+  b.drawImage(ih.img.name,imagePos(ih))
+  b.drawAreaShadow(ih.area,3,color(255,255,255,150))
+  b.drawText(
+    miniBlue.title,
+    (ih.area.x+5).toFloat,
+    (ih.area.y).toFloat,
+    miniBlue.title,
+    fontFace(point,18,color(0,0,1))
+  )
+
+proc drawUsedPile(b:var Boxy) =
+  if turn != nil and usedCards.len > 0:
+    b.drawMiniBlue(usedCards[^1],usedPile)
+    b.drawAreaShadow(usedPile.area,3,color(255,255,255,150))
 
 proc drawMiniBlues(b:var Boxy) =
   for i,blue in turn.player.cards:
-    b.drawImage(miniBlues[i].img.name,imagePos(miniBlues[i]))
-    b.drawAreaShadow(miniBlues[i].area,3,color(255,255,255,150))
-    b.drawText(
-      "title"&i.intToStr,
-      (miniBlues[i].area.x+5).toFloat,
-      (miniBlues[i].area.y).toFloat,
-      blue.title,
-      fontFace(point,18,color(0,0,1))
-    )
+    b.drawMiniBlue(blue,miniBlues[i])
+
+proc drawUsedPileBigBlue(b:var Boxy) =
+  if mouseOn() == "usedpile" and usedCards.len > 0:
+    b.drawBigBlue(usedCards[^1])
 
 proc draw (b:var Boxy) =
   if turn != nil:
     b.drawUndrawnCardsNr()
     b.drawBigBlue()
     b.drawMiniBlues()
+    b.drawUsedPile()
+    b.drawUsedPileBigBlue()
   
 proc initCityBlues*() =
   miniBlues = newMiniBlues()
   addMouseHandle(newMouseHandle(bluePile))
+  addImage(usedPile)
+  addMouseHandle(newMouseHandle(usedPile))
   addImage(planbg)
   addCall(newCall("cityblues",keyboard,mouse,draw))

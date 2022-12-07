@@ -14,15 +14,16 @@ type
 
 const
   bh = 100
-  (wx,wy) = (220,60)
-  (bx,by) = (wx,wy)
+  bw = 170
+  (wx,wy) = (15,60)
+  (bx*,by*) = (wx+205,wy)
   sqOff = 43
   (tbxo,lryo) = (220,172)
   (tyo,byo) = (70,690)
   (lxo,rxo) = (70,1030)
 
-  die1Pos = (x:1225+wx,y:wy)
-  die2Pos = (x:1225+wx,y:wy+60)
+  die1Pos = (x:1225+bx,y:by)
+  die2Pos = (x:1225+bx,y:by+60)
 
   selColor = color(255,255,255,100)
 
@@ -64,8 +65,10 @@ proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
     result[index] = newAreaHandle(
       "playerbatch"&index.intToStr,
-      15,wy+((index-1)*150),170,bh
-#      15+bx+((index-1)*200),wy,170,bh
+      wx,
+      wy+((index-1)*(bh+50)),
+      bw,
+      bh
     )
     addMouseHandle(newMouseHandle(result[index]))
 
@@ -147,6 +150,7 @@ proc drawBatchText(b:var Boxy,player:Player) =
     offset = offsetArea(player.batch.area,5)    
     lines = [
       "Turn: "&player.turnNr.intToStr,
+      "Plans: "&player.cards.len.intToStr,
       "Cash: "&player.cash.intToStr.insertSep(sep='.')
     ]
   for i,line in lines:
@@ -257,6 +261,8 @@ proc mouseRightClicked() =
     oldTime = cpuTime()
     if turn == nil:
       newGame()
+    elif gameWon():
+      newGameSetup()
     else:
       nextPlayerTurn()
 
@@ -296,6 +302,7 @@ proc moveSelectedPieceTo(toSquare:int) =
   echo "undrawn cards: ",nrOfUndrawnBlueCards
   eraseSquareSelection()
   playSound("driveBy")
+  if gameWon(): playSound("applause-2")
 
 proc checkRemovePieceOn(square:int) =
   if nrOfPiecesOn(square) == 1:
@@ -410,6 +417,26 @@ proc drawPiecesOnSquares(b:var Boxy) =
 
 proc drawTopBar(b:var Boxy) =
   b.drawRect((0,0,windowWidth(),40).toRect,color(75,150,240))
+  b.drawText(
+    "togglecash",
+    10,5,
+    "(c)ash to win: "&cashAmountToWin().intToStr,
+    fontFace(ibmB,20,color(1,1,1))
+  )
+  if turn != nil:
+    b.drawText(
+      "newgame",
+      320,5,
+      "(n)ew game",
+      fontFace(ibmB,20,color(1,1,1))
+    )
+    b.drawText(
+      "dice##",
+      500,5,
+      "(d)ice(##)set",
+      fontFace(ibmB,20,color(1,1,1))
+    )
+#[   b.drawRect((0,0,windowWidth(),40).toRect,color(75,150,240))
   b.drawText("text7",10,5,mouseOn(),fontFace(ibmB,20,color(1,1,1)))
   b.drawText(
     "text9",
@@ -423,7 +450,7 @@ proc drawTopBar(b:var Boxy) =
     "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
     fontFace(ibmB,20,color(1,1,1))
   )
-
+ ]#
 proc draw (b:var Boxy) =
   b.drawDice()
   b.drawBoard()
@@ -443,6 +470,8 @@ proc keyboard (k:KeyEvent) =
   if k.button == KeyN:
     playSound("carhorn-1")
     newGameSetup()
+  if k.button == KeyC:
+    toggleCashToWin()
   if k.button == ButtonUnknown and not isRollingDice():
     let c = k.rune.toUTF8
     var i:int

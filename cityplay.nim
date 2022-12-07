@@ -44,6 +44,7 @@ type
 
 const 
   piecePrice* = 5000
+  cashToWin = [250000,500000]
   defaultPlayerKinds = [human,human,none,none,none,none]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
@@ -51,6 +52,7 @@ const
   maxRollFrames = 40
 
 var
+  cashToWinSelected:int
   removePiece*:RemovePiece
   playerKinds*:array[1..6,PlayerKind] = defaultPlayerKinds
   dice*:array[1..2,int] = [3,4]
@@ -61,6 +63,16 @@ var
   blueCards*:seq[BlueCard]
   usedCards*:seq[BlueCard]
   nrOfUndrawnBlueCards*:int
+
+proc toggleCashToWin*() =
+  inc cashToWinSelected
+  if cashToWinSelected > cashToWin.len-1:
+    cashToWinSelected = 0
+
+proc gameWon*(): bool =
+  turn.player.cash >= cashToWin[cashToWinSelected]
+
+proc cashAmountToWin*(): int = cashToWin[cashToWinSelected]
 
 proc readFile(path:string): seq[string] =
   var 
