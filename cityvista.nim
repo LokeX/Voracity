@@ -305,7 +305,7 @@ proc moveSelectedPieceTo(toSquare:int) =
   if gameWon(): playSound("applause-2")
 
 proc checkRemovePieceOn(square:int) =
-  if nrOfPiecesOn(square) == 1:
+  if nrOfPiecesOn(square) == 1 and not square in highways and not square in gasStations:
     setRemovePieceOn(square)
     removePieceDialog = newRemovePieceDialog(square)
 
@@ -319,7 +319,7 @@ proc isRemovedPiece(square:int): bool =
 
 proc selectablePieceOn(square:int): bool = 
   moveSquares.len == 0 and turn.player.hasPieceOn(square) and
-  not turn.diceMoved or square in highways or isRemovedPiece(square)
+  (not turn.diceMoved or square in highways or isRemovedPiece(square))
 
 proc pieceSelectAndMove() =
   let square = mouseOnSquareNr()
