@@ -32,6 +32,11 @@ const
     color(0,0,50),color(50,50,0),
     color(255,255,255),color(1,1,1)
   ]
+  playerColorsTrans*:array[PlayerColors,Color] = [
+    color(50,0,0,150),color(0,50,0,150),
+    color(0,0,50,150),color(50,50,0,150),
+    color(255,255,255,150),color(1,1,1,150)
+  ]
   contrastColors:array[PlayerColors,Color] = [
     color(1,1,1),
     color(255,255,255),
@@ -344,6 +349,7 @@ proc dialog() =
   if mouseOn() == removePieceDialog.yes.name:
     removePlayersPiece()
     endDialog(removePieceDialog)
+    playSound("Gunshot")
     playSound("Deanscream-2")
   else:
     if mouseOn() == removePieceDialog.no.name:

@@ -74,7 +74,6 @@ proc drawUndrawnCardsNr(b:var Boxy) =
 
 proc squaredPlans(plan:BlueCard): seq[string] =
   let (s,p) = planedSquares(plan)
-#  echo s,p
   toSeq(0..s.len-1).mapIt(p[it].intToStr&" piece on: "&squares[s[it]].name)
 
 proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
@@ -92,7 +91,7 @@ proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
     a:Area = (planbg.area.x+10,planbg.area.y+90,planbg.area.w-20,(sp.len+1)*20)
     (ps,_) = planedSquares(bigBlue)
   for s in ps:
-    b.drawRect(squares[s].area.toRect(),color(0,1,0,150))
+    b.drawRect(squares[s].area.toRect(),playerColorsTrans[turn.player.color])
   b.drawRect(a.toRect,color(1,1,1))
   b.drawAreaShadow(a,2,color(0,0,0,150))
   for i,text in sp:
