@@ -23,10 +23,6 @@ Cheat
 {12}
 20000
 plan:
-Coup
-{60,60,6,6}
-150000
-plan:
 Demolition
 {43}
 20000

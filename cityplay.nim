@@ -26,10 +26,10 @@ type
     diceMoved*:bool
     pieceMoved*:bool
     undrawnCards*:int
-  Square = tuple
-    evals:seq[tuple[evalDesc:string,eval:int]]
-    nrOfPlayerPieces:array[6,int]
-  Board = array[1..60,Square]
+  Square* = object
+    evals*:seq[tuple[evalDesc:string,eval:int]]
+    nrOfPlayerPieces*:array[6,int]
+  Board* = array[1..60,Square]
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
   BlueCard* = ref object
@@ -59,7 +59,7 @@ var
   dieRollFrame* = maxRollFrames
   players*:array[1..6,Player]
   turn*:Turn = nil
-  board*:Board
+#  board*:Board
   blueCards*:seq[BlueCard]
   usedCards*:seq[BlueCard]
   nrOfUndrawnBlueCards*:int
@@ -201,12 +201,6 @@ proc newPlayers*(kind:array[6,PlayerKind]): array[1..6,Player] =
       cash:25000
     )
 
-proc putPiecesOnBoard(): Board =
-  for player in players:
-    if player.kind != none:
-      for square in player.piecesOnSquares:
-        inc result[square].nrOfPlayerPieces[player.nr-1]
-
 proc nextPlayerTurn*() =
   if turn != nil: discardCards()
   startDiceRoll()
@@ -282,7 +276,7 @@ proc movePiece*(fromSquare,toSquare:int) =
   if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
 players = newDefaultPlayers()
-board = putPiecesOnBoard() 
+#board = putPiecesOnBoard() 
 blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
 echo "nr of blues: ",blueCards.len
 for card in blueCards:
