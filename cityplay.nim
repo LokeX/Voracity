@@ -29,7 +29,7 @@ type
   Square* = object
     evals*:seq[tuple[evalDesc:string,eval:int]]
     nrOfPlayerPieces*:array[6,int]
-  Board* = array[1..60,Square]
+  Board* = array[0..60,Square]
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
   BlueCard* = ref object

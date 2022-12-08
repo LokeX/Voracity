@@ -45,7 +45,7 @@ proc drawVals(b:var Boxy) =
       for val in values:
         let (desc,eval) = val
         b.drawText(
-          desc,
+          "values:"&desc,
           area.x.toFloat+10,
           area.y.toFloat+5,
           desc&": "&eval.intToStr,
