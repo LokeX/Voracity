@@ -36,11 +36,13 @@ type
   KeyCall   = proc(keyboard:KeyEvent)
   MouseCall = proc(mouse:MouseEvent)
   DrawCall  = proc(boxy:var Boxy)
+  CycleCall = proc()
   Call      = ref object
-    reciever:string
-    keyboard:KeyCall
-    mouse   :MouseCall
-    draw    :DrawCall
+    reciever*:string
+    keyboard*:KeyCall
+    mouse*   :MouseCall
+    draw*    :DrawCall
+    cycle*   :CycleCall
 
 let 
   window* = newWindow(
@@ -89,8 +91,8 @@ proc echoMouseHandles*() =
 
 proc addCall*(call:Call) = calls.add(call)
 
-proc newCall*(r:string, k:KeyCall, m:MouseCall, d:DrawCall): Call =
-  Call(reciever:r,keyboard:k,mouse:m,draw:d)
+proc newCall*(r:string, k:KeyCall, m:MouseCall, d:DrawCall, c:CycleCall): Call =
+  Call(reciever:r,keyboard:k,mouse:m,draw:d,cycle:c)
 
 func mouseClicked(button:Button): bool = 
   button in [

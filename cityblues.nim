@@ -147,4 +147,4 @@ proc initCityBlues*() =
   addImage(usedPile)
   addMouseHandle(newMouseHandle(usedPile))
   addImage(planbg)
-  addCall(newCall("cityblues",keyboard,mouse,draw))
+  addCall(newCall("cityblues",keyboard,mouse,draw,nil))

@@ -59,7 +59,7 @@ var
   dieRollFrame* = maxRollFrames
   players*:array[1..6,Player]
   turn*:Turn = nil
-  board:Board
+  board*:Board
   blueCards*:seq[BlueCard]
   usedCards*:seq[BlueCard]
   nrOfUndrawnBlueCards*:int
@@ -158,6 +158,7 @@ proc drawBlueCard*() =
   if nrOfUndrawnBlueCards > 0:
     if blueCards.len == 0:
       blueCards.add(usedCards)
+      usedCards.setLen(0)
       blueCards.shuffle()
     turn.player.cards.add(blueCards.pop)
     dec nrOfUndrawnBlueCards

@@ -55,4 +55,4 @@ proc showFonts(b:var Boxy) =
 
 proc initCityText*() =
   showText = false
-  addCall(newCall("fonts",nil,nil,showFonts))
+  addCall(newCall("fonts",nil,nil,showFonts,nil))

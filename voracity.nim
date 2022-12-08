@@ -2,6 +2,8 @@ import cityscape
 import citytext
 import cityvista
 import cityblues
+import cityai
+import sequtils
 import os
 
 let
@@ -22,10 +24,11 @@ proc draw (b:var Boxy) =
 
 proc initVoracity() =
   addImage(bg)
-  addCall(newCall("voracity",keyboard,mouse,draw))
+  addCall(newCall("voracity",keyboard,mouse,draw,nil))
   initCityText()
   initCityVista()
   initCityBlues()
+  initCityai()
   window.visible = true
   echo "nr of recievers: ",calls.len()
   echo "nr of mouse handles:",mouseHandles.len()
@@ -34,3 +37,4 @@ initVoracity()
 while not window.closeRequested:
   sleep(30)
   pollEvents()
+  for call in calls.filterIt(it.cycle != nil): call.cycle()

@@ -512,4 +512,4 @@ proc initCityVista*() =
   initSquareHandles()
   playerBatches = newPlayerBatches()
   wirePlayerBatches()
-  addCall(newCall("cityvista",keyboard,mouse,draw))
+  addCall(newCall("cityvista",keyboard,mouse,draw,nil))
