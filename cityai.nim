@@ -28,8 +28,6 @@ var
   hypoMoves:seq[HypoMove]
   board:Board
 
-#proc boardValues(): seq[int] = board.mapIt(it.vals.mapIt(it.val).sum.toFloat)
-
 proc evalPos(square:int): int =
   let squareVals = 
     toSeq(square..square+posPercent.len-1)

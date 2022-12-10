@@ -245,6 +245,13 @@ proc adjustToSquareNr*(adjustSquare:int): int =
 
 func moveToSquare(fromSquare:int,die:int): int = adjustToSquareNr(fromSquare+die)
 
+proc moveToSquares*(fromSquare,die:int): seq[int] =
+  if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
+  if fromSquare in highways or fromsquare == 0:
+    if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
+    result.add(gasStations.mapIt(moveToSquare(it,die)))
+  result = result.filterIt(it != fromSquare).deduplicate
+
 proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
   if fromSquare == 0: 
     result.add(highways)
@@ -254,12 +261,16 @@ proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
   if not turn.diceMoved:
     for i,die in dice:
       if i == 0 or not isDouble():
-        if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
+        result.add(moveToSquares(fromSquare,die))
+
+#[         if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
         if fromSquare in highways or fromsquare == 0:
           if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
           result.add(gasStations.mapIt(moveToSquare(it,die)))
-    result = result.filterIt(it != fromSquare).deduplicate
 
+    result = result.filterIt(it != fromSquare).deduplicate
+ ]#
+ 
 proc toggleKind*(kind:PlayerKind): PlayerKind =
   case kind
     of human:computer
