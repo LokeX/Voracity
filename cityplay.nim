@@ -248,7 +248,7 @@ func moveToSquare(fromSquare:int,die:int): int =
   result = fromSquare+die
   if result > 60: result -= 60
 
-proc moveToSquares(fromSquare:int,dice:array[2,int]): seq[int] =
+proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
   if fromSquare == 0: 
     result.add(highways)
     result.add(gasStations)
