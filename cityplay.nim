@@ -26,10 +26,6 @@ type
     diceMoved*:bool
     pieceMoved*:bool
     undrawnCards*:int
-  Square* = object
-    evals*:seq[tuple[evalDesc:string,eval:int]]
-    nrOfPlayerPieces*:array[6,int]
-  Board* = array[0..60,Square]
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
   BlueCard* = ref object
@@ -244,9 +240,10 @@ proc nrOfPiecesOn*(square:int): int =
 proc hasPieceOn*(player:Player,square:int): bool =
   player.piecesOnSquares.any(p => p == square)
 
-func moveToSquare(fromSquare:int,die:int): int =
-  result = fromSquare+die
-  if result > 60: result -= 60
+proc adjustToSquareNr*(adjustSquare:int): int =
+  if adjustSquare > 60: adjustSquare - 60 else: adjustSquare
+
+func moveToSquare(fromSquare:int,die:int): int = adjustToSquareNr(fromSquare+die)
 
 proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
   if fromSquare == 0: 
@@ -255,12 +252,13 @@ proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
   elif fromSquare in highways: 
     result.add(gasStations)
   if not turn.diceMoved:
-    for die in dice:
-      if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
-      if fromSquare in highways or fromsquare == 0:
-        if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
-        result.add(gasStations.mapIt(moveToSquare(it,die)))
-    result = result.filterIt(it != fromSquare).deduplicate()
+    for i,die in dice:
+      if i == 0 or not isDouble():
+        if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
+        if fromSquare in highways or fromsquare == 0:
+          if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
+          result.add(gasStations.mapIt(moveToSquare(it,die)))
+    result = result.filterIt(it != fromSquare).deduplicate
 
 proc toggleKind*(kind:PlayerKind): PlayerKind =
   case kind
