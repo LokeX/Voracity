@@ -13,6 +13,7 @@ const
 type
   Dice = array[2,int]
   HypoDice = array[15,Dice]
+  Move = tuple[piece,die,eval:int]
   HypoMove = object
     pieceNr:int
     dice:Dice
@@ -54,6 +55,13 @@ proc initHypoMoves() =
         evals:toSquares.mapIt(evalPos(it))
       )
 
+proc bestMove(): Move =
+  var bestMoves:seq[Move]
+  for piece,square in turn.player.piecesOnSquares:
+    for die in 1..6:
+      bestMoves.add (piece,die,moveToSquares(square,die).mapIt(evalPos(it)).max)
+  bestMoves[bestMoves.mapIt(it.eval).maxIndex]
+  
 proc pieces(): array[5,int] = turn.player.piecesOnSquares
 
 proc countBars(): int = pieces().countIt(it in bars)
