@@ -4,6 +4,7 @@ import cityvista
 import citytext
 import strutils
 import sequtils
+import math
 
 const
   highwayVal = 3000
@@ -23,50 +24,27 @@ type
     vals:seq[tuple[evalDesc:string,val:int]]
     nrOfPlayerPieces*:array[6,int]
   Board = array[0..60,Square]
+  EvalBoard = array[61,int]
+  Hypothetic = object
+    board:array[61,int]
+    pieces:array[5,int]
+    cards:seq[BlueCard]
+
 
 var
   hypoDice: HypoDice
   hypoMoves:seq[HypoMove]
   board:Board
 
-proc evalPos(square:int): int =
-  let squareVals = 
-    toSeq(square..square+posPercent.len-1)
-    .mapIt(adjustToSquareNr(it))
-    .mapIt(board[it].vals.mapIt(it.val).sum.toFloat)
-  toSeq(0..posPercent.len-1).mapIt((squareVals[it]*posPercent[it]).toInt).sum
+proc countBars(pieces:array[5,int]): int = pieces.countIt(it in bars)
 
-proc initHypoDice() =
-  var count = 0
-  for die1 in 1..5:
-    for die2 in 2..6:
-      if die1 != die2 and die2 > die1:
-        hypoDice[count] = [die1,die2]
-        inc count
+proc barVal(pieces:array[5,int]): int = valBar-(1000*countBars(pieces))
 
-proc initHypoMoves() =
-  for pNr,piece in turn.player.piecesOnSquares:
-    for dice in hypoDice:
-      let toSquares = moveToSquares(piece,dice)
-      hypomoves.add HypoMove(
-        pieceNr:pNr,
-        dice:dice,
-        toSquares:toSquares,
-        evals:toSquares.mapIt(evalPos(it))
-      )
-
-proc bestMove(): Move =
-  var bestMoves:seq[Move]
-  for piece,square in turn.player.piecesOnSquares:
-    for die in 1..6:
-      bestMoves.add (piece,die,moveToSquares(square,die).mapIt(evalPos(it)).max)
-  bestMoves[bestMoves.mapIt(it.eval).maxIndex]
-  
-proc pieces(): array[5,int] = turn.player.piecesOnSquares
-
-proc countBars(): int = pieces().countIt(it in bars)
-
-proc barVal(): int = valBar-(1000*countBars())
+proc boardVals() =
+  for highway in highways:
+    board[highway].vals.add ("highway",highwayVal)
+  for square in bars:
+      board[square].vals.add ("bar",barVal(turn.player.piecesOnSquares))
 
 proc anyPieceOn(squares:seq[int]): bool = 
   squares.anyIt(turn.player.hasPieceOn(it))
@@ -80,11 +58,75 @@ proc blueVals() =
         )
       )
 
-proc boardVals() =
-  for highway in highways:
-    board[highway].vals.add ("highway",highwayVal)
-  for square in bars:
-      board[square].vals.add ("bar",barVal())
+func evalSquare(hypo:Hypothetic,square:int): int =
+  let 
+    squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
+    piecesAhead = squares.countIt(it in hypo.pieces).toFloat-1
+    squareVals = squares.mapIt(hypo.board[it].toFloat)
+  toSeq(0..posPercent.len-1)
+  .mapIt((squareVals[it]*posPercent[it].pow(piecesAhead)).toInt)
+  .sum
+
+func anyOn(pieces:openArray[int],squares:seq[int]): bool = pieces.anyIt(it in squares)
+
+func evalPos(hypo:Hypothetic): int = 
+  hypo.pieces.mapIt(hypo.evalSquare(it)).sum
+
+func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoard =
+  result = evalBoard
+  for square in card.squares.required:
+    result[square] += card.cash div (
+      if pieces.anyOn(card.squares.required): 1 else: 2
+    )
+
+proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
+  for highway in highways: 
+    result[highway] = highwayVal
+  for bar in bars: 
+    result[bar] = barVal(pieces)
+
+func evalBlue(hypo:Hypothetic,card:BlueCard): int =
+  Hypothetic(board:baseEvalBoard(hypo.pieces).writeBlue(card,hypo.pieces)).evalPos()
+
+func writeBlues(evalBoard:EvalBoard,cards:seq[BlueCard],pieces:openArray[int]): EvalBoard =
+  for card in cards:
+    result = result.writeBlue(card,pieces)
+
+proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
+  var pieces = hypo.pieces
+  pieces[pieceNr] = toSquare
+  Hypothetic(pieces:pieces,board:hypo.board,cards:hypo.cards).evalPos()
+
+proc initHypoDice() =
+  var count = 0
+  for die1 in 1..5:
+    for die2 in 2..6:
+      if die1 != die2 and die2 > die1:
+        hypoDice[count] = [die1,die2]
+        inc count
+
+proc initHypoMoves(hypo:Hypothetic) =
+  for pNr,piece in hypo.pieces:
+    for dice in hypoDice:
+      let toSquares = moveToSquares(piece,dice)
+      hypomoves.add HypoMove(
+        pieceNr:pNr,
+        dice:dice,
+        toSquares:toSquares,
+        evals:toSquares.mapIt(hypo.evalSquare(it))
+      )
+
+proc bestMove(hypo:Hypothetic): Move =
+  var bestMoves:seq[Move]
+  for pieceNr,square in hypo.pieces:
+    for die in 1..6:
+      bestMoves.add (
+        pieceNr,
+        die,
+        moveToSquares(square,die)
+        .mapIt(hypo.evalMove(pieceNr,it)).max
+      )
+  bestMoves[bestMoves.mapIt(it.eval).maxIndex]
 
 proc putPiecesOnBoard(board:var Board) =
   for player in players.filterIt(it.kind != none):
@@ -131,12 +173,18 @@ proc draw (b:var Boxy) =
 proc cycle() =
   if turn != nil and turn.player.kind == computer:
     echo "ai online"
-    computeBoard()
-    initHypoDice()
-    for dice in hypoDice: echo dice
-    initHypoMoves()
-    echo evalPos(53)
+    var hypo = Hypothetic(
+      board:baseEvalBoard(turn.player.piecesOnSquares),
+      pieces:turn.player.piecesOnSquares,
+      cards:turn.player.cards
+      )
+    while nrOfUndrawnBlueCards > 0:
+      drawBlueCard()
+      dec nrOfUndrawnBlueCards
     nextPlayerTurn()
 
 proc initCityai*() =
   addCall(newCall("cityai",keyboard,mouse,draw,cycle))
+
+echo 0.5.pow(2)
+echo 0.5.pow(3)
