@@ -6,11 +6,12 @@ import strutils
 import sequtils
 import math
 import algorithm
+import os
 
 const
-  highwayVal = 3000
+  highwayVal = 1000
   valBar = 5000
-  posPercent = [1.0,0.5,0.5,0.5,0.5,0.5,0.5,0.25,0.24,0.22,0.20,0.18,0.15]
+  posPercent = [1.0,0.3,0.3,0.3,0.3,0.3,0.3,0.25,0.24,0.22,0.20,0.18,0.15]
 
 type
   Dice = array[2,int]
@@ -28,6 +29,7 @@ type
 
 var
   aiDone,aiWorking:bool
+  hypo:Hypothetic
   hypoDice: HypoDice
   board:Board
 
@@ -56,7 +58,6 @@ proc blueVals() =
 func evalSquare(hypo:Hypothetic,square:int): int =
   let 
     squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
-#    piecesAhead = squares.countIt(it in hypo.pieces).toFloat-1
     squareVals = squares.mapIt(hypo.board[it].toFloat)
   toSeq(0..posPercent.len-1)
   .mapIt((squareVals[it]*posPercent[it]).toInt)
@@ -75,6 +76,7 @@ func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoa
     )
 
 proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
+  result[0] = 4000
   for highway in highways: 
     result[highway] = highwayVal
   for bar in bars: 
@@ -92,10 +94,10 @@ func writeBlues(hypo:Hypothetic): EvalBoard =
   for card in hypo.cards:
     result = result.writeBlue(card,hypo.pieces)
 
-proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
+func evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypo.pieces
   pieces[pieceNr] = toSquare
-  (hypo.board,pieces,hypo.cards).evalSquare(toSquare)
+  (hypo.board,pieces,hypo.cards).evalPos()
 
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
   let
@@ -117,7 +119,54 @@ proc move(hypothetical:Hypothetic,dice:openArray[int]): Move =
 proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
   for pieceNr,fromSquare in hypothetical.pieces:
     for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
-#  result.sortedByIt(it.eval)
+
+proc aiCanRun(): bool =
+  not aiWorking and 
+  turn != nil and 
+  turn.player.kind == computer and 
+  not isRollingDice()
+
+proc drawCards() =
+  while nrOfUndrawnBlueCards > 0:
+    drawBlueCard()
+    dec nrOfUndrawnBlueCards
+
+proc bestDiceMoves(hypothetical:Hypothetic): seq[Move] =
+  let moves = hypothetical.hypoMoves()
+  for die in 1..6:
+    let dieMoves = moves.filterIt(it.die == die)
+    result.add dieMoves[dieMoves.mapIt(it.eval).maxIndex()]
+  result.sortedByIt(it.eval)
+
+proc reroll(hypothetical:Hypothetic): bool =
+  let bestDiceMoves = hypothetical.bestDiceMoves()
+  for diceMove in bestDiceMoves:
+    echo "DiceMove: ",diceMove
+  isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
+
+proc runAi() =
+  aiWorking = true
+  var 
+    hypothetical:Hypothetic = (
+      baseEvalBoard(turn.player.piecesOnSquares),
+      turn.player.piecesOnSquares,
+      turn.player.cards 
+    )
+  hypo = hypothetical
+  echo "board: ",hypothetical.board
+  echo "dice: ",dice
+  echo "posEval: ",hypothetical.evalPos()
+  drawCards()
+  if not hypothetical.reroll():
+    let move = hypothetical.move(dice)
+    echo "move: ",move
+    moveFromTo(move.fromSquare,move.toSquare)
+    drawCards()
+  else:
+    sleep(1000)
+    startDiceRoll()
+    aiWorking = false
+  aiDone = true
 
 proc initHypoDice() =
   var count = 0
@@ -157,13 +206,25 @@ proc drawVals(b:var Boxy) =
         )
 
 proc keyboard (k:KeyEvent) =
+  if k.button == KeyA:
+    turn.player.piecesOnSquares = hypo.pieces
+    turn.player.cards = hypo.cards
+    aiWorking = false
+    aiDone = false
+    startDiceRoll()
+  if k.button == KeyN:
+    aiWorking = false
+    aiDone = false
+    echo "n key: new game"
+    playSound("carhorn-1")
+    newGameSetup()
   if k.button == ButtonUnknown:
     echo "Rune: ",k.rune
   else:
     echo k.button
 
 proc mouse (m:MouseEvent) =
-  if mouseClicked(m.keyState):
+  if mouseClicked(m.keyState) and m.button == MouseLeft:
     if aiDone:
       aiDone = false
       aiWorking = false
@@ -172,47 +233,6 @@ proc mouse (m:MouseEvent) =
 
 proc draw (b:var Boxy) =
   if turn != nil: b.drawVals()
-
-proc aiCanRun(): bool =
-  not aiWorking and 
-  turn != nil and 
-  turn.player.kind == computer and 
-  not isRollingDice()
-
-proc drawCards() =
-  while nrOfUndrawnBlueCards > 0:
-    drawBlueCard()
-    dec nrOfUndrawnBlueCards
-
-proc reroll(hypothetical:Hypothetic): bool =
-  let bestDice = hypothetical
-    .hypoMoves()
-    .sortedByIt(it.eval)
-    .mapIt(it.die)
-    .deduplicate()
-  echo "bestDice: ",bestDice
-  isDouble() and bestDice[^1] != dice[1]
-
-proc runAi() =
-  aiWorking = true
-  var 
-    hypothetical:Hypothetic = (
-      baseEvalBoard(turn.player.piecesOnSquares),
-      turn.player.piecesOnSquares,
-      turn.player.cards 
-    )
-  echo "board:",hypothetical.board
-  echo "dice:",dice
-  drawCards()
-  if not hypothetical.reroll():
-    let move = hypothetical.move(dice)
-    echo "move: ",move
-    moveFromTo(move.fromSquare,move.toSquare)
-    drawCards()
-  else:
-    rollDice()
-    aiWorking = false
-  aiDone = true
 
 proc cycle() =
   if aiCanRun(): runAi()

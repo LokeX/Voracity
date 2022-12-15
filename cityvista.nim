@@ -86,14 +86,17 @@ proc wirePlayerBatches() =
 
 proc newGame() =
   players = newPlayers(playerKinds)
+  echo "next player turn"
   nextPlayerTurn()
   wirePlayerBatches()
   shuffleBlueCards()
+  echo "new game"
 
 proc newGameSetup*() =
   turn = nil
   players = newDefaultPlayers()
   wirePlayerBatches()
+  echo "new game setup"
 
 proc squareNames(filePath:string): seq[string] =
   var 
@@ -265,10 +268,13 @@ proc mouseRightClicked() =
     playSound("carhorn-1")
     oldTime = cpuTime()
     if turn == nil:
+      echo "right click new game"
       newGame()
     elif gameWon():
+      echo "right click game won"
       newGameSetup()
     else:
+      echo "right click next player turn"
       nextPlayerTurn()
 
 proc mouseOnPlayer(): Player =
@@ -477,9 +483,6 @@ var
   lastButton:Button
 
 proc keyboard (k:KeyEvent) =
-  if k.button == KeyN:
-    playSound("carhorn-1")
-    newGameSetup()
   if k.button == KeyC:
     toggleCashToWin()
   if k.button == ButtonUnknown and not isRollingDice():
