@@ -97,14 +97,6 @@ proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   pieces[pieceNr] = toSquare
   (hypo.board,pieces,hypo.cards).evalSquare(toSquare)
 
-proc initHypoDice() =
-  var count = 0
-  for die1 in 1..5:
-    for die2 in 2..6:
-      if die1 != die2 and die2 > die1:
-        hypoDice[count] = [die1,die2]
-        inc count
-
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
   let
     squares = moveToSquares(fromSquare,die)
@@ -114,12 +106,6 @@ proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
     eval = evals[bestEval]
   result = (pieceNr,die,fromSquare,bestSquare,eval)
 
-proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
-  for pieceNr,fromSquare in hypothetical.pieces:
-    for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
-
-proc bestHypoMove(hypo:Hypothetic): Move = hypo.hypoMoves().sortedByIt(it.eval)[^1]
-
 proc move(hypothetical:Hypothetic,dice:openArray[int]): Move = 
   var moves:seq[Move]
   for pieceNr,fromSquare in hypothetical.pieces:
@@ -128,6 +114,18 @@ proc move(hypothetical:Hypothetic,dice:openArray[int]): Move =
   echo moves
   result = moves.sortedByIt(it.eval)[^1]
 
+proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
+  for pieceNr,fromSquare in hypothetical.pieces:
+    for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
+#  result.sortedByIt(it.eval)
+
+proc initHypoDice() =
+  var count = 0
+  for die1 in 1..5:
+    for die2 in 2..6:
+      if die1 != die2 and die2 > die1:
+        hypoDice[count] = [die1,die2]
+        inc count
 
 proc putPiecesOnBoard(board:var Board) =
   for player in players.filterIt(it.kind != none):
@@ -181,22 +179,39 @@ proc aiCanRun(): bool =
   turn.player.kind == computer and 
   not isRollingDice()
 
-proc runAi() =
-  aiWorking = true
-  echo "ai online"
-  var hypothetical:Hypothetic = (
-    baseEvalBoard(turn.player.piecesOnSquares),
-    turn.player.piecesOnSquares,
-    turn.player.cards
-    )
-  echo hypothetical.board
+proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
     dec nrOfUndrawnBlueCards
-  let move = hypothetical.move(dice)
-  echo dice
-  echo move
-  movePiece(move.fromSquare,move.toSquare)
+
+proc reroll(hypothetical:Hypothetic): bool =
+  let bestDice = hypothetical
+    .hypoMoves()
+    .sortedByIt(it.eval)
+    .mapIt(it.die)
+    .deduplicate()
+  echo "bestDice: ",bestDice
+  isDouble() and bestDice[^1] != dice[1]
+
+proc runAi() =
+  aiWorking = true
+  var 
+    hypothetical:Hypothetic = (
+      baseEvalBoard(turn.player.piecesOnSquares),
+      turn.player.piecesOnSquares,
+      turn.player.cards 
+    )
+  echo "board:",hypothetical.board
+  echo "dice:",dice
+  drawCards()
+  if not hypothetical.reroll():
+    let move = hypothetical.move(dice)
+    echo "move: ",move
+    moveFromTo(move.fromSquare,move.toSquare)
+    drawCards()
+  else:
+    rollDice()
+    aiWorking = false
   aiDone = true
 
 proc cycle() =

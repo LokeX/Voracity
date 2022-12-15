@@ -295,8 +295,8 @@ proc setDiceMoved(square:int) =
       selectedSquare == 0
     )
 
-proc moveSelectedPieceTo(toSquare:int) =
-  movePiece(selectedSquare,toSquare)
+proc moveFromTo*(fromSquare,toSquare:int) =
+  movePiece(fromSquare,toSquare)
   setDiceMoved(toSquare)
   if selectedSquare == 0: turn.player.cash -= piecePrice
   if toSquare in bars: 
@@ -305,9 +305,12 @@ proc moveSelectedPieceTo(toSquare:int) =
   if cashInPlans() > 0:
     playSound("coins-to-table-2")
   echo "undrawn cards: ",nrOfUndrawnBlueCards
-  eraseSquareSelection()
   playSound("driveBy")
   if gameWon(): playSound("applause-2")
+
+proc moveSelectedPieceTo(toSquare:int) =
+  moveFromTo(selectedSquare,toSquare)
+  eraseSquareSelection()
 
 proc checkRemovePieceOn(square:int) =
   if nrOfPiecesOn(square) == 1:

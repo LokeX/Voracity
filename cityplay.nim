@@ -248,7 +248,8 @@ func moveToSquare(fromSquare:int,die:int): int = adjustToSquareNr(fromSquare+die
 proc moveToSquares*(fromSquare,die:int): seq[int] =
   if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
   if fromSquare in highways or fromsquare == 0:
-    if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
+    if fromSquare == 0 and turn.player.cash >= piecePrice: 
+      result.add(highways.mapIt(moveToSquare(it,die)))
     result.add(gasStations.mapIt(moveToSquare(it,die)))
   result = result.filterIt(it != fromSquare).deduplicate
 
