@@ -7,6 +7,7 @@ import sequtils
 import math
 import algorithm
 import os
+import sugar
 
 const
   highwayVal = 1000
@@ -14,8 +15,6 @@ const
   posPercent = [1.0,0.3,0.3,0.3,0.3,0.3,0.3,0.25,0.24,0.22,0.20,0.18,0.15]
 
 type
-  Dice = array[2,int]
-  HypoDice = array[15,Dice]
   Move = tuple[pieceNr,die,fromSquare,toSquare,eval:int]
   Square = object
     vals:seq[tuple[evalDesc:string,val:int]]
@@ -30,7 +29,6 @@ type
 var
   aiDone,aiWorking:bool
   hypo:Hypothetic
-  hypoDice: HypoDice
   board:Board
 
 proc countBars(pieces:array[5,int]): int = pieces.countIt(it in bars)
@@ -55,18 +53,7 @@ proc blueVals() =
         )
       )
 
-func evalSquare(hypo:Hypothetic,square:int): int =
-  let 
-    squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
-    squareVals = squares.mapIt(hypo.board[it].toFloat)
-  toSeq(0..posPercent.len-1)
-  .mapIt((squareVals[it]*posPercent[it]).toInt)
-  .sum
-
 func anyOn(pieces:openArray[int],squares:seq[int]): bool = pieces.anyIt(it in squares)
-
-func evalPos(hypo:Hypothetic): int = 
-  hypo.pieces.mapIt(hypo.evalSquare(it)).sum
 
 func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoard =
   result = evalBoard
@@ -75,6 +62,31 @@ func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoa
       if pieces.anyOn(card.squares.required): 1 else: 2
     )
 
+func writeBlues(hypo:Hypothetic): EvalBoard =
+  for card in hypo.cards:
+    result = hypo.board.writeBlue(card,hypo.pieces)
+
+proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
+  var pieceCount:int
+  for square in squares:
+    pieceCount += hypothetical.pieces.count(square)
+    if pieceCount < 2:
+      result.add posPercent[square]
+    else:
+      result.add posPercent[square].pow(pieceCount.toFloat)
+
+proc evalSquare(hypothetical:Hypothetic,square:int): int =
+  let 
+    squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
+    squareVals = squares.mapIt(hypo.board[it].toFloat)
+    squarePercent = hypothetical.posPercentages(squares)
+  toSeq(0..posPercent.len-1)
+  .mapIt((squareVals[it]*squarePercent[it]).toInt)
+  .sum
+
+proc evalPos(hypo:Hypothetic): int = 
+  hypo.pieces.mapIt(hypo.evalSquare(it)).sum
+
 proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
   result[0] = 4000
   for highway in highways: 
@@ -82,7 +94,7 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
   for bar in bars: 
     result[bar] = barVal(pieces)
 
-func evalBlue(hypo:Hypothetic,card:BlueCard): int =
+proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
   evalPos (
     baseEvalBoard(hypo.pieces)
     .writeBlue(card,hypo.pieces),
@@ -90,11 +102,14 @@ func evalBlue(hypo:Hypothetic,card:BlueCard): int =
     hypo.cards
   )
 
-func writeBlues(hypo:Hypothetic): EvalBoard =
-  for card in hypo.cards:
-    result = result.writeBlue(card,hypo.pieces)
+proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
+  for card in hypothetical.cards:
+    var tc = card
+    tc.eval = hypothetical.evalBlue(card)
+    result.add tc
+  result.sort((a,b) => a.eval - b.eval)
 
-func evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
+proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypo.pieces
   pieces[pieceNr] = toSquare
   (hypo.board,pieces,hypo.cards).evalPos()
@@ -129,7 +144,6 @@ proc aiCanRun(): bool =
 proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
-    dec nrOfUndrawnBlueCards
 
 proc bestDiceMoves(hypothetical:Hypothetic): seq[Move] =
   let moves = hypothetical.hypoMoves()
@@ -146,40 +160,36 @@ proc reroll(hypothetical:Hypothetic): bool =
 
 proc runAi() =
   aiWorking = true
+  drawCards()
   var 
     hypothetical:Hypothetic = (
       baseEvalBoard(turn.player.piecesOnSquares),
       turn.player.piecesOnSquares,
       turn.player.cards 
     )
+  hypothetical.cards = hypothetical.evalBlues()
+  turn.player.cards = hypothetical.cards
   hypo = hypothetical
   echo "board: ",hypothetical.board
   echo "dice: ",dice
   echo "posEval: ",hypothetical.evalPos()
-  drawCards()
+  for card in hypothetical.cards:
+    echo "card: "
+    echo "title: ",card.title
+    echo "eval: ",card.eval
   if not hypothetical.reroll():
     let move = hypothetical.move(dice)
     echo "move: ",move
     moveFromTo(move.fromSquare,move.toSquare)
-    drawCards()
+    drawCards() 
+    hypothetical.cards = turn.player.cards
+    hypothetical.cards = hypothetical.evalBlues()
+    turn.player.cards = hypothetical.cards
   else:
     sleep(1000)
     startDiceRoll()
     aiWorking = false
   aiDone = true
-
-proc initHypoDice() =
-  var count = 0
-  for die1 in 1..5:
-    for die2 in 2..6:
-      if die1 != die2 and die2 > die1:
-        hypoDice[count] = [die1,die2]
-        inc count
-
-proc putPiecesOnBoard(board:var Board) =
-  for player in players.filterIt(it.kind != none):
-    for square in player.piecesOnSquares:
-      inc board[square].nrOfPlayerPieces[player.nr-1]
 
 proc computeBoard() =
   blueVals()
@@ -224,11 +234,11 @@ proc keyboard (k:KeyEvent) =
     echo k.button
 
 proc mouse (m:MouseEvent) =
-  if mouseClicked(m.keyState) and m.button == MouseLeft:
+  if mouseClicked(m.keyState) and m.button == MouseRight:
     if aiDone:
       aiDone = false
       aiWorking = false
-      nextPlayerTurn()
+#      nextPlayerTurn()
     echo "pos: ",m.pos
 
 proc draw (b:var Boxy) =

@@ -37,6 +37,7 @@ type
       pricedOptional:seq[int]
     ]
     cash*:int
+    eval*:int
 
 const 
   piecePrice* = 5_000
