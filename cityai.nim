@@ -71,9 +71,26 @@ func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoa
       if pieces.anyOn(card.squares.required): 1 else: 2
     )
 
-#[ func blueSquareVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
+func blueBonus(hypothetical:Hypothetic,square:int): int =
+  for card in hypothetical.cards:
+    if square in card.squares.required:
+      if card.cash > result: result = card.cash
+
+func blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   for square in squares:
- ]#    
+    let
+      piecesOnSquare = hypothetical.piecesOn(square) 
+      requiredPiecesOnSquare = hypothetical.requiredPiecesOn(square)
+      freePiecesOnSquare = piecesOnSquare - requiredPiecesOnSquare
+    if requiredPiecesOnSquare == 0 or freePiecesOnSquare > 0:
+      result.add 0
+    elif freePiecesOnSquare == 0:
+      result.add hypothetical.blueBonus(square)
+    else: result.add(
+      (hypothetical.blueBonus(square) div 
+      requiredPiecesOnSquare)*piecesOnSquare
+    )
+    
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
   var freePieces:int
   for square in squares:
@@ -88,10 +105,11 @@ proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
 proc evalSquare(hypothetical:Hypothetic,square:int): int =
   let 
     squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
+    blueSquareValues = hypothetical.blueVals(squares)
     baseSquareVals = squares.mapIt(hypo.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
   toSeq(0..posPercent.len-1)
-  .mapIt((baseSquareVals[it]*squarePercent[it]).toInt)
+  .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
 
 proc evalPos(hypo:Hypothetic): int = 
@@ -106,10 +124,9 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
 
 proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
   evalPos (
-    baseEvalBoard(hypo.pieces)
-    .writeBlue(card,hypo.pieces),
+    baseEvalBoard(hypo.pieces),
     hypo.pieces,
-    hypo.cards
+    @[card]
   )
 
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
