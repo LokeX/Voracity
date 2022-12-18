@@ -55,6 +55,15 @@ proc blueVals() =
 
 func anyOn(pieces:openArray[int],squares:seq[int]): bool = pieces.anyIt(it in squares)
 
+func piecesOn(hypothetical:Hypothetic,square:int): int =
+  hypothetical.pieces.count(square)
+
+func requiredPiecesOn(hypothetical:Hypothetic,square:int): int =
+  hypothetical.cards.mapIt(it.squares.required.count(square)).max
+
+func freePiecesOn(hypothetical:Hypothetic,square:int): int =
+  hypothetical.piecesOn(square) - hypothetical.requiredPiecesOn(square)
+
 func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoard =
   result = evalBoard
   for square in card.squares.required:
@@ -62,26 +71,27 @@ func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoa
       if pieces.anyOn(card.squares.required): 1 else: 2
     )
 
-func writeBlues(hypo:Hypothetic): EvalBoard =
-  for card in hypo.cards:
-    result = hypo.board.writeBlue(card,hypo.pieces)
-
-proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
-  var pieceCount:int
+#[ func blueSquareVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   for square in squares:
-    pieceCount += hypothetical.pieces.count(square)
-    if pieceCount < 2:
+ ]#    
+proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
+  var freePieces:int
+  for square in squares:
+    let freePiecesOnSquare = hypothetical.freePiecesOn(square)
+    if freePiecesOnSquare > 0:
+      freePieces += freePiecesOnSquare
+    if freePieces == 0:
       result.add posPercent[square]
     else:
-      result.add posPercent[square].pow(pieceCount.toFloat)
+      result.add posPercent[square].pow(freePieces.toFloat)
 
 proc evalSquare(hypothetical:Hypothetic,square:int): int =
   let 
     squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
-    squareVals = squares.mapIt(hypo.board[it].toFloat)
+    baseSquareVals = squares.mapIt(hypo.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
   toSeq(0..posPercent.len-1)
-  .mapIt((squareVals[it]*squarePercent[it]).toInt)
+  .mapIt((baseSquareVals[it]*squarePercent[it]).toInt)
   .sum
 
 proc evalPos(hypo:Hypothetic): int = 
