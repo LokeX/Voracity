@@ -71,24 +71,32 @@ func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoa
       if pieces.anyOn(card.squares.required): 1 else: 2
     )
 
-func blueBonus(hypothetical:Hypothetic,square:int): int =
-  for card in hypothetical.cards:
+func blueBonusCardNr(hypothetical:Hypothetic,square:int): int =
+  for i,card in hypothetical.cards:
     if square in card.squares.required:
-      if card.cash > result: result = card.cash
+      if card.cash > hypothetical.cards[result].cash: result = i
+
+func nrOfPiecesOnBlueSquares(hypothetical:Hypothetic,card:BlueCard): int =
+  for piece in hypothetical.pieces:
+    if piece in card.squares.required:
+      inc result
 
 func blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
-  for square in squares:
+  for i,square in squares:
     let
       piecesOnSquare = hypothetical.piecesOn(square) 
       requiredPiecesOnSquare = hypothetical.requiredPiecesOn(square)
       freePiecesOnSquare = piecesOnSquare - requiredPiecesOnSquare
+      blueBonusCard = hypothetical.cards[hypothetical.blueBonusCardNr(square)]
+      blueBonus = blueBonusCard.cash
+      squaresRequiredByBlue = blueBonusCard.squares.required.len
     if requiredPiecesOnSquare == 0 or freePiecesOnSquare > 0:
-      result.add 0
-    elif freePiecesOnSquare == 0:
-      result.add hypothetical.blueBonus(square)
+      result.add(0)
+    elif freePiecesOnSquare == 0 and i == 0:
+      result.add(blueBonus)
     else: result.add(
-      (hypothetical.blueBonus(square) div 
-      requiredPiecesOnSquare)*piecesOnSquare
+      (blueBonus div squaresRequiredByBlue)*
+      hypothetical.nrOfPiecesOnBlueSquares(blueBonusCard)
     )
     
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
