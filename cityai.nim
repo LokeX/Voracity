@@ -53,23 +53,15 @@ proc blueVals() =
         )
       )
 
-func anyOn(pieces:openArray[int],squares:seq[int]): bool = pieces.anyIt(it in squares)
-
 func piecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.pieces.count(square)
 
 func requiredPiecesOn(hypothetical:Hypothetic,square:int): int =
-  hypothetical.cards.mapIt(it.squares.required.count(square)).max
+  if hypothetical.cards.len == 0: 0 else:
+    hypothetical.cards.mapIt(it.squares.required.count(square)).max
 
 func freePiecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.piecesOn(square) - hypothetical.requiredPiecesOn(square)
-
-func writeBlue(evalBoard:EvalBoard,card:BlueCard,pieces:openArray[int]): EvalBoard =
-  result = evalBoard
-  for square in card.squares.required:
-    result[square] += card.cash div (
-      if pieces.anyOn(card.squares.required): 1 else: 2
-    )
 
 func blueBonusCardNr(hypothetical:Hypothetic,square:int): int =
   for i,card in hypothetical.cards:
@@ -83,32 +75,37 @@ func nrOfPiecesOnBlueSquares(hypothetical:Hypothetic,card:BlueCard): int =
 
 func blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   for i,square in squares:
-    let
-      piecesOnSquare = hypothetical.piecesOn(square) 
-      requiredPiecesOnSquare = hypothetical.requiredPiecesOn(square)
-      freePiecesOnSquare = piecesOnSquare - requiredPiecesOnSquare
-      blueBonusCard = hypothetical.cards[hypothetical.blueBonusCardNr(square)]
-      blueBonus = blueBonusCard.cash
-      squaresRequiredByBlue = blueBonusCard.squares.required.len
-    if requiredPiecesOnSquare == 0 or freePiecesOnSquare > 0:
-      result.add(0)
-    elif freePiecesOnSquare == 0 and i == 0:
-      result.add(blueBonus)
-    else: result.add(
-      (blueBonus div squaresRequiredByBlue)*
-      hypothetical.nrOfPiecesOnBlueSquares(blueBonusCard)
-    )
+    if hypothetical.cards.len == 0: result.add(0) else:
+      let
+        piecesOnSquare = hypothetical.piecesOn(square) 
+        requiredPiecesOnSquare = hypothetical.requiredPiecesOn(square)
+        freePiecesOnSquare = piecesOnSquare - requiredPiecesOnSquare
+        blueBonusCard = hypothetical.cards[hypothetical.blueBonusCardNr(square)]
+        blueBonus = blueBonusCard.cash
+        squaresRequiredByBlue = blueBonusCard.squares.required.len
+      if requiredPiecesOnSquare == 0 or freePiecesOnSquare > 0:
+        result.add(0)
+      elif freePiecesOnSquare == 0 and i == 0:
+        result.add(blueBonus)
+      else: 
+        result.add(blueBonus div squaresRequiredByBlue)
+
+#[         debugEcho "write blue value on square: ",square
+        debugEcho "requiredPiecesOnSquare: ",requiredPiecesOnSquare
+        debugEcho "freePiecesOnSquare: ",freePiecesOnSquare
+        debugEcho "blueBonus: ",blueBonus
+ ]#        
     
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
   var freePieces:int
-  for square in squares:
+  for i,square in squares:
     let freePiecesOnSquare = hypothetical.freePiecesOn(square)
     if freePiecesOnSquare > 0:
       freePieces += freePiecesOnSquare
     if freePieces == 0:
-      result.add posPercent[square]
+      result.add posPercent[i]
     else:
-      result.add posPercent[square].pow(freePieces.toFloat)
+      result.add posPercent[i].pow(freePieces.toFloat)
 
 proc evalSquare(hypothetical:Hypothetic,square:int): int =
   let 
@@ -116,6 +113,11 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
     blueSquareValues = hypothetical.blueVals(squares)
     baseSquareVals = squares.mapIt(hypo.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
+#  echo "evalSquare: ",square
+#  echo "squares: ",squares
+#  echo "blueVals: ",blueSquareValues
+#  echo "baseVals: ",baseSquareVals
+#  echo "squarePercent: ",squarePercent
   toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
@@ -131,6 +133,7 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
     result[bar] = barVal(pieces)
 
 proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
+  echo "evalBlue: ",card.title
   evalPos (
     baseEvalBoard(hypo.pieces),
     hypo.pieces,
@@ -138,11 +141,13 @@ proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
   )
 
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
+  echo "evalBlues:"
   for card in hypothetical.cards:
     var tc = card
     tc.eval = hypothetical.evalBlue(card)
     result.add tc
-  result.sort((a,b) => a.eval - b.eval)
+    echo tc.title&": ",tc.eval
+  result.sort((a,b) => b.eval - a.eval)
 
 proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypo.pieces
@@ -193,6 +198,11 @@ proc reroll(hypothetical:Hypothetic): bool =
     echo "DiceMove: ",diceMove
   isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
 
+proc echoCards(hypothetical:Hypothetic) =
+  for card in hypothetical.cards:
+    echo "card: ",card.title
+    echo "eval: ",card.eval
+
 proc runAi() =
   aiWorking = true
   drawCards()
@@ -208,10 +218,8 @@ proc runAi() =
   echo "board: ",hypothetical.board
   echo "dice: ",dice
   echo "posEval: ",hypothetical.evalPos()
-  for card in hypothetical.cards:
-    echo "card: "
-    echo "title: ",card.title
-    echo "eval: ",card.eval
+  hypothetical.echoCards()
+
   if not hypothetical.reroll():
     let move = hypothetical.move(dice)
     echo "move: ",move
@@ -220,10 +228,13 @@ proc runAi() =
     hypothetical.cards = turn.player.cards
     hypothetical.cards = hypothetical.evalBlues()
     turn.player.cards = hypothetical.cards
+    hypothetical.echoCards()
   else:
+    echo "reroll"
     sleep(1000)
     startDiceRoll()
     aiWorking = false
+  echo "ai: done"
   aiDone = true
 
 proc computeBoard() =
