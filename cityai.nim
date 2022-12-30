@@ -63,39 +63,53 @@ func requiredPiecesOn(hypothetical:Hypothetic,square:int): int =
 func freePiecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.piecesOn(square) - hypothetical.requiredPiecesOn(square)
 
-func blueBonusCardNr(hypothetical:Hypothetic,square:int): int =
-  for i,card in hypothetical.cards:
-    if square in card.squares.required:
-      if card.cash > hypothetical.cards[result].cash: result = i
+proc covers(pieceNr,square:int): bool =
+  for die in 1..6:
+    if square in moveToSquares(pieceNr,die):
+      return true
 
-func nrOfPiecesOnBlueSquares(hypothetical:Hypothetic,card:BlueCard): int =
-  for piece in hypothetical.pieces:
-    if piece in card.squares.required:
-      inc result
+proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
+  for pieceNr,pieceSquare in hypothetical.pieces:
+    for blueSquareNr,blueSquare in card.squares.required:
+      let 
+        squareCovered = pieceSquare == blueSquare or pieceNr.covers(blueSquare)
+        pieceOccupied = result.anyIt(it.pieceNr == pieceNr)
+      if squareCovered and not pieceOccupied: result.add (pieceNr,blueSquareNr)
 
-func blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
+proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
+  let covers = hypothetical.blueCovers(card)
+  for squareNr in 0..card.squares.required.len-1:
+    if covers.filterIt(it.squareNr == squareNr).len == 0:
+      return false
+
+proc blueBonus(hypothetical:Hypothetic,card:BlueCard,i,square:int): int =
+  let
+    blueSquares = card.squares.required.deduplicate
+    squareIndex = blueSquares.find(square)
+  if squareIndex >= 0:
+    let nrOfPiecesRequired = card.squares.required.len
+    if nrOfPiecesRequired == 1: result = 10_000 else:
+      let
+        piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
+        requiredPiecesOn = blueSquares.mapIt(card.squares.required.count(it))
+        freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
+        stayBonus = piecesOn[squareIndex] > 0 and freePieces == 0
+        coverBonus = freePieces < 0 and hypothetical.blueCovered(card)
+      if stayBonus or coverBonus:
+        var nrOfPieces = 1
+        for square in 0..blueSquares.len-1:
+          if piecesOn[square] > requiredPiecesOn[square]:
+            nrOfPieces += requiredPiecesOn[square]
+          else:
+            nrOfPieces += piecesOn[square]
+        result = (40_000 div nrOfPiecesRequired)*nrOfPieces
+
+proc blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   for i,square in squares:
     if hypothetical.cards.len == 0: result.add(0) else:
-      let
-        piecesOnSquare = hypothetical.piecesOn(square) 
-        requiredPiecesOnSquare = hypothetical.requiredPiecesOn(square)
-        freePiecesOnSquare = piecesOnSquare - requiredPiecesOnSquare
-        blueBonusCard = hypothetical.cards[hypothetical.blueBonusCardNr(square)]
-        blueBonus = blueBonusCard.cash
-        squaresRequiredByBlue = blueBonusCard.squares.required.len
-      if requiredPiecesOnSquare == 0 or freePiecesOnSquare > 0:
-        result.add(0)
-      elif freePiecesOnSquare == 0 and i == 0:
-        result.add(blueBonus)
-      else: 
-        result.add(blueBonus div squaresRequiredByBlue)
+      for card in hypothetical.cards:
+        result.add(hypothetical.blueBonus(card,i,square))
 
-#[         debugEcho "write blue value on square: ",square
-        debugEcho "requiredPiecesOnSquare: ",requiredPiecesOnSquare
-        debugEcho "freePiecesOnSquare: ",freePiecesOnSquare
-        debugEcho "blueBonus: ",blueBonus
- ]#        
-    
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
   var freePieces:int
   for i,square in squares:
@@ -113,11 +127,6 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
     blueSquareValues = hypothetical.blueVals(squares)
     baseSquareVals = squares.mapIt(hypo.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
-#  echo "evalSquare: ",square
-#  echo "squares: ",squares
-#  echo "blueVals: ",blueSquareValues
-#  echo "baseVals: ",baseSquareVals
-#  echo "squarePercent: ",squarePercent
   toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
@@ -133,13 +142,12 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
     result[bar] = barVal(pieces)
 
 proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
-  echo "evalBlue: ",card.title
   evalPos (
     baseEvalBoard(hypo.pieces),
     hypo.pieces,
     @[card]
   )
-
+ 
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
   echo "evalBlues:"
   for card in hypothetical.cards:
