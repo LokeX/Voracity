@@ -42,7 +42,7 @@ type
 const 
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
-  defaultPlayerKinds = [computer,computer,none,none,none,none]
+  defaultPlayerKinds = [computer,none,none,none,none,none]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
   bars* = [1,16,18,20,28,35,40,46,51,54]

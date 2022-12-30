@@ -63,26 +63,33 @@ func requiredPiecesOn(hypothetical:Hypothetic,square:int): int =
 func freePiecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.piecesOn(square) - hypothetical.requiredPiecesOn(square)
 
-proc covers(pieceNr,square:int): bool =
+proc covers(pieceSquare,coverSquare:int): bool =
   for die in 1..6:
-    if square in moveToSquares(pieceNr,die):
+    if coverSquare in moveToSquares(pieceSquare,die):
       return true
 
 proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
-  for pieceNr,pieceSquare in hypothetical.pieces:
-    for blueSquareNr,blueSquare in card.squares.required:
+  for blueSquareNr,blueSquare in card.squares.required:
+    for pieceNr,pieceSquare in hypothetical.pieces:
       let 
-        squareCovered = pieceSquare == blueSquare or pieceNr.covers(blueSquare)
-        pieceOccupied = result.anyIt(it.pieceNr == pieceNr)
-      if squareCovered and not pieceOccupied: result.add (pieceNr,blueSquareNr)
+        squareCovered = pieceSquare == blueSquare or pieceSquare.covers(blueSquare)
+#        pieceOccupied = result.anyIt(it.pieceNr == pieceNr)
+      if squareCovered: result.add (pieceNr,blueSquareNr)
 
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let covers = hypothetical.blueCovers(card)
+  echo "Covers:"
+  for cover in covers:
+    let (pnr,snr) = cover
+    echo hypothetical.pieces[pnr],",",card.squares.required[snr]
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
+      echo card.title,": not covered"
       return false
+  echo card.title,": covered"
+  return true
 
-proc blueBonus(hypothetical:Hypothetic,card:BlueCard,i,square:int): int =
+proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   let
     blueSquares = card.squares.required.deduplicate
     squareIndex = blueSquares.find(square)
@@ -93,9 +100,9 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,i,square:int): int =
         piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
         requiredPiecesOn = blueSquares.mapIt(card.squares.required.count(it))
         freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
-        stayBonus = piecesOn[squareIndex] > 0 and freePieces == 0
-        coverBonus = freePieces < 0 and hypothetical.blueCovered(card)
-      if stayBonus or coverBonus:
+      echo "freePieces: ",freePieces
+      if freePieces < 1 and hypothetical.blueCovered(card):
+        echo "bonus:"
         var nrOfPieces = 1
         for square in 0..blueSquares.len-1:
           if piecesOn[square] > requiredPiecesOn[square]:
@@ -103,12 +110,13 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,i,square:int): int =
           else:
             nrOfPieces += piecesOn[square]
         result = (40_000 div nrOfPiecesRequired)*nrOfPieces
+        echo card.title,": square bonus: ",result
 
 proc blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
-  for i,square in squares:
+  for square in squares:
     if hypothetical.cards.len == 0: result.add(0) else:
       for card in hypothetical.cards:
-        result.add(hypothetical.blueBonus(card,i,square))
+        result.add(hypothetical.blueBonus(card,square))
 
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
   var freePieces:int
