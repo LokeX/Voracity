@@ -71,13 +71,17 @@ proc covers(pieceSquare,coverSquare:int): bool =
 proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
   for blueSquareNr,blueSquare in card.squares.required:
     for pieceNr,pieceSquare in hypothetical.pieces:
-      let 
-        squareCovered = pieceSquare == blueSquare or pieceSquare.covers(blueSquare)
-#        pieceOccupied = result.anyIt(it.pieceNr == pieceNr)
-      if squareCovered: result.add (pieceNr,blueSquareNr)
+      if pieceSquare == blueSquare or pieceSquare.covers(blueSquare): 
+        result.add (pieceNr,blueSquareNr)
 
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
-  let covers = hypothetical.blueCovers(card)
+  let 
+    covers = hypothetical.blueCovers(card) 
+    pieceCheck = covers.mapIt(it.pieceNr)
+      .deduplicate.len >= card.squares.required.len
+    squareCheck = covers.mapIt(it.squareNr)
+      .deduplicate.len == card.squares.required.deduplicate.len
+  if not pieceCheck or not squareCheck: return false
   echo "Covers:"
   for cover in covers:
     let (pnr,snr) = cover
@@ -95,14 +99,12 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
     squareIndex = blueSquares.find(square)
   if squareIndex >= 0:
     let nrOfPiecesRequired = card.squares.required.len
-    if nrOfPiecesRequired == 1: result = 10_000 else:
+    if nrOfPiecesRequired == 1: result = 20_000 else:
       let
         piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
         requiredPiecesOn = blueSquares.mapIt(card.squares.required.count(it))
         freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
-      echo "freePieces: ",freePieces
       if freePieces < 1 and hypothetical.blueCovered(card):
-        echo "bonus:"
         var nrOfPieces = 1
         for square in 0..blueSquares.len-1:
           if piecesOn[square] > requiredPiecesOn[square]:
@@ -110,7 +112,7 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
           else:
             nrOfPieces += piecesOn[square]
         result = (40_000 div nrOfPiecesRequired)*nrOfPieces
-        echo card.title,": square bonus: ",result
+        echo card.title,": square: ",square," bonus: ",result
 
 proc blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   for square in squares:

@@ -49,7 +49,7 @@ const
   maxRollFrames = 40
 
 var
-  cashToWinSelected = 2
+  cashToWinSelected = 3
   removePiece*:RemovePiece
   playerKinds*:array[1..6,PlayerKind] = defaultPlayerKinds
   dice*:array[1..2,int] = [3,4]
