@@ -169,15 +169,15 @@ proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
 
 proc sortBlues(hypothetical:Hypothetic): seq[BlueCard] =
   var cards = hypothetical.evalBlues
-  if hypothetical.cards.len > 3:
+  if cards.len > 3:
     let board = baseEvalBoard(hypothetical.pieces)
     var evals:seq[tuple[cards:seq[BlueCard],eval:int]]
     for i in 0..cards.len-1:
       let eval = (board,hypothetical.pieces,cards[0..2]).evalPos
       evals.add (cards[0..2],eval)
       cards.insert(cards.pop,0)
-    evals.sort((a,b) => b.eval - a.eval)
-    let bestCombo = evals[0].cards
+#    evals.sort((a,b) => b.eval - a.eval)
+    let bestCombo = evals[evals.mapIt(it.eval).maxIndex].cards
     for card in bestCombo:
       cards.del(cards.find(card))
     result.add bestCombo

@@ -79,7 +79,10 @@ proc readFile(path:string): seq[string] =
   close(text)
 
 proc shuffleBlueCards*() =
+  blueCards.add(usedCards)
+  usedCards.setLen(0)
   blueCards.shuffle()
+#  blueCards.shuffle()
   for card in blueCards:
     echo card.title
 
@@ -154,9 +157,12 @@ proc cashInPlans*(): int =
 proc drawBlueCard*() = 
   if nrOfUndrawnBlueCards > 0:
     if blueCards.len == 0:
-      blueCards.add(usedCards)
+      shuffleBlueCards()
+
+#[       blueCards.add(usedCards)
       usedCards.setLen(0)
       blueCards.shuffle()
+ ]#
     turn.player.cards.add(blueCards.pop)
     dec nrOfUndrawnBlueCards
 
