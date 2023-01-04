@@ -77,20 +77,14 @@ proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,square
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let 
     covers = hypothetical.blueCovers(card) 
-    pieceCheck = covers.mapIt(it.pieceNr)
+    enoughPieces = covers.mapIt(it.pieceNr)
       .deduplicate.len >= card.squares.required.len
-    squareCheck = covers.mapIt(it.squareNr)
+    squaresCovered = covers.mapIt(it.squareNr)
       .deduplicate.len == card.squares.required.deduplicate.len
-  if not pieceCheck or not squareCheck: return false
-  echo "Covers:"
-  for cover in covers:
-    let (pnr,snr) = cover
-    echo hypothetical.pieces[pnr],",",card.squares.required[snr]
+  if not enoughPieces and not squaresCovered: return false
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
-      echo card.title,": not covered"
       return false
-  echo card.title,": covered"
   return true
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
@@ -99,7 +93,12 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
     squareIndex = blueSquares.find(square)
   if squareIndex >= 0:
     let nrOfPiecesRequired = card.squares.required.len
-    if nrOfPiecesRequired == 1: result = 20_000 else:
+    if nrOfPiecesRequired == 1: 
+      if turn.player.cash+20_000 > cashAmountToWin():
+        result = 100_000
+      else:
+        result = 20_000 
+    else:
       let
         piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
         requiredPiecesOn = blueSquares.mapIt(card.squares.required.count(it))
@@ -115,10 +114,11 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
         echo card.title,": square: ",square," bonus: ",result
 
 proc blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
-  for square in squares:
-    if hypothetical.cards.len == 0: result.add(0) else:
+  result.setLen(squares.len)
+  if hypothetical.cards.len > 0:
+    for i,square in squares:
       for card in hypothetical.cards:
-        result.add(hypothetical.blueBonus(card,square))
+        result[i] += hypothetical.blueBonus(card,square)
 
 proc posPercentages(hypothetical:Hypothetic,squares:seq[int]): seq[float] =
   var freePieces:int
@@ -159,13 +159,29 @@ proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
   )
  
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
-  echo "evalBlues:"
+#  echo "evalBlues:"
   for card in hypothetical.cards:
     var tc = card
     tc.eval = hypothetical.evalBlue(card)
     result.add tc
-    echo tc.title&": ",tc.eval
+#    echo tc.title&": ",tc.eval
   result.sort((a,b) => b.eval - a.eval)
+
+proc sortBlues(hypothetical:Hypothetic): seq[BlueCard] =
+  var cards = hypothetical.evalBlues
+  if hypothetical.cards.len > 3:
+    let board = baseEvalBoard(hypothetical.pieces)
+    var evals:seq[tuple[cards:seq[BlueCard],eval:int]]
+    for i in 0..cards.len-1:
+      let eval = (board,hypothetical.pieces,cards[0..2]).evalPos
+      evals.add (cards[0..2],eval)
+      cards.insert(cards.pop,0)
+    evals.sort((a,b) => b.eval - a.eval)
+    let bestCombo = evals[0].cards
+    for card in bestCombo:
+      cards.del(cards.find(card))
+    result.add bestCombo
+  result.add cards
 
 proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypo.pieces
@@ -230,7 +246,8 @@ proc runAi() =
       turn.player.piecesOnSquares,
       turn.player.cards 
     )
-  hypothetical.cards = hypothetical.evalBlues()
+  hypothetical.cards = hypothetical.sortBlues()
+#  hypothetical.cards = hypothetical.evalBlues()
   turn.player.cards = hypothetical.cards
   hypo = hypothetical
   echo "board: ",hypothetical.board
@@ -244,7 +261,7 @@ proc runAi() =
     moveFromTo(move.fromSquare,move.toSquare)
     drawCards() 
     hypothetical.cards = turn.player.cards
-    hypothetical.cards = hypothetical.evalBlues()
+    hypothetical.cards = hypothetical.sortBlues()
     turn.player.cards = hypothetical.cards
     hypothetical.echoCards()
   else:
