@@ -219,7 +219,7 @@ proc nextPlayerTurn*() =
   nrOfUndrawnBlueCards = countNrOfUndrawnBlueCards() 
   echo "undrawn cards: ",nrOfUndrawnBlueCards
 
-proc removePieceOn(square:int): tuple[player:Player,piece:int] =
+proc removePieceOn*(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none):
     for pieceNr,piece in player.piecesOnSquares:
       if piece == square:
@@ -229,6 +229,9 @@ proc setRemovePieceOn*(square:int) =
   removePiece = removePieceOn(square)
 
 proc removePlayersPiece*() =
+  removePiece.player.piecesOnSquares[removePiece.piece] = 0
+
+proc removePlayersPiece*(removePiece:RemovePiece) =
   removePiece.player.piecesOnSquares[removePiece.piece] = 0
 
 func piecesOnSquare*(player:Player,square:int): int =

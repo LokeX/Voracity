@@ -232,6 +232,13 @@ proc reroll(hypothetical:Hypothetic): bool =
     echo "DiceMove: ",diceMove
   isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
 
+proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
+  if nrOfPiecesOn(square) == 1 and square notIn highways and square notIn gasStations:
+    if turn.player.hasPieceOn(square):
+      return hypothetical.requiredPiecesOn(square) < 2
+    else:
+      return true
+
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:
     echo "card: ",card.title
@@ -256,9 +263,18 @@ proc runAi() =
   hypothetical.echoCards()
 
   if not hypothetical.reroll():
-    let move = hypothetical.move(dice)
+    let 
+      move = hypothetical.move(dice)
+      remPiece = hypothetical.aiRemovePiece(move.toSquare)
+    var
+      pieceRem = removePieceOn(move.toSquare)
+    #pieceRemoval:tuple[player:Player,piece:int]
     echo "move: ",move
     moveFromTo(move.fromSquare,move.toSquare)
+    if remPiece: 
+      removePlayersPiece(pieceRem)
+      playSound("Gunshot")
+      playSound("Deanscream-2")
     drawCards() 
     hypothetical.cards = turn.player.cards
     hypothetical.cards = hypothetical.sortBlues()
