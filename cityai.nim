@@ -11,7 +11,7 @@ import sugar
 
 const
   highwayVal = 1000
-  valBar = 5000
+  valBar = 2500
   posPercent = [1.0,0.3,0.3,0.3,0.3,0.3,0.3,0.25,0.24,0.22,0.20,0.18,0.15]
 
 type
@@ -33,7 +33,7 @@ var
 
 proc countBars(pieces:array[5,int]): int = pieces.countIt(it in bars)
 
-proc barVal(pieces:array[5,int]): int = valBar-(1000*countBars(pieces))
+proc barVal(pieces:array[5,int]): int = valBar-(500*countBars(pieces))
 
 proc boardVals() =
   for highway in highways:
@@ -77,11 +77,11 @@ proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,square
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let 
     covers = hypothetical.blueCovers(card) 
-    enoughPieces = covers.mapIt(it.pieceNr)
-      .deduplicate.len >= card.squares.required.len
-    squaresCovered = covers.mapIt(it.squareNr)
-      .deduplicate.len == card.squares.required.deduplicate.len
-  if not enoughPieces and not squaresCovered: 
+    availPieces = covers.mapIt(it.pieceNr).deduplicate.len
+    enoughPieces =  availPieces >= card.squares.required.len
+    squaresCovered = covers.mapIt(it.squareNr).deduplicate.len 
+    allSquaresCovered = squaresCovered == card.squares.required.deduplicate.len
+  if not enoughPieces or not allSquaresCovered: 
     echo card.title,": not covered: reject 1"
     return false
   for squareNr in 0..card.squares.required.len-1:
@@ -101,7 +101,7 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
       if turn.player.cash+20_000 > cashAmountToWin():
         result = 100_000
       else:
-        result = 20_000 
+        result = 30_000 
     else:
       let
         piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
@@ -146,8 +146,8 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
   .sum
   echo "square: ",square,": eval: ",result
 
-proc evalPos(hypo:Hypothetic): int = 
-  hypo.pieces.mapIt(hypo.evalSquare(it)).sum
+proc evalPos(hypothetical:Hypothetic): int = 
+  hypothetical.pieces.mapIt(hypothetical.evalSquare(it)).sum
 
 proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
   result[0] = 4000
@@ -156,10 +156,10 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
   for bar in bars: 
     result[bar] = barVal(pieces)
 
-proc evalBlue(hypo:Hypothetic,card:BlueCard): int =
+proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
   evalPos (
-    baseEvalBoard(hypo.pieces),
-    hypo.pieces,
+    baseEvalBoard(hypothetical.pieces),
+    hypothetical.pieces,
     @[card]
   )
  
@@ -181,7 +181,6 @@ proc sortBlues(hypothetical:Hypothetic): seq[BlueCard] =
       let eval = (board,hypothetical.pieces,cards[0..2]).evalPos
       evals.add (cards[0..2],eval)
       cards.insert(cards.pop,0)
-#    evals.sort((a,b) => b.eval - a.eval)
     let bestCombo = evals[evals.mapIt(it.eval).maxIndex].cards
     for i,card in bestCombo:
       echo card.title,": best combo eval: ",evals[i].eval
