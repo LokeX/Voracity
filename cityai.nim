@@ -81,10 +81,14 @@ proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
       .deduplicate.len >= card.squares.required.len
     squaresCovered = covers.mapIt(it.squareNr)
       .deduplicate.len == card.squares.required.deduplicate.len
-  if not enoughPieces and not squaresCovered: return false
+  if not enoughPieces and not squaresCovered: 
+    echo card.title,": not covered: reject 1"
+    return false
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
+      echo card.title,": not covered: reject 2"
       return false
+  echo card.title,": covered"
   return true
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
@@ -111,7 +115,7 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
           else:
             nrOfPieces += piecesOn[square]
         result = (40_000 div nrOfPiecesRequired)*nrOfPieces
-        echo card.title,": square: ",square," bonus: ",result
+        #echo card.title,": square: ",square," bonus: ",result
 
 proc blueVals(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   result.setLen(squares.len)
@@ -135,11 +139,12 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
   let 
     squares = toSeq(square..square+posPercent.len-1).mapIt(adjustToSquareNr(it))
     blueSquareValues = hypothetical.blueVals(squares)
-    baseSquareVals = squares.mapIt(hypo.board[it].toFloat)
+    baseSquareVals = squares.mapIt(hypothetical.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
-  toSeq(0..posPercent.len-1)
+  result = toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
+  echo "square: ",square,": eval: ",result
 
 proc evalPos(hypo:Hypothetic): int = 
   hypo.pieces.mapIt(hypo.evalSquare(it)).sum
@@ -178,7 +183,8 @@ proc sortBlues(hypothetical:Hypothetic): seq[BlueCard] =
       cards.insert(cards.pop,0)
 #    evals.sort((a,b) => b.eval - a.eval)
     let bestCombo = evals[evals.mapIt(it.eval).maxIndex].cards
-    for card in bestCombo:
+    for i,card in bestCombo:
+      echo card.title,": best combo eval: ",evals[i].eval
       cards.del(cards.find(card))
     result.add bestCombo
   result.add cards
@@ -254,7 +260,6 @@ proc runAi() =
       turn.player.cards 
     )
   hypothetical.cards = hypothetical.sortBlues()
-#  hypothetical.cards = hypothetical.evalBlues()
   turn.player.cards = hypothetical.cards
   hypo = hypothetical
   echo "board: ",hypothetical.board
@@ -268,7 +273,6 @@ proc runAi() =
       remPiece = hypothetical.aiRemovePiece(move.toSquare)
     var
       pieceRem = removePieceOn(move.toSquare)
-    #pieceRemoval:tuple[player:Player,piece:int]
     echo "move: ",move
     moveFromTo(move.fromSquare,move.toSquare)
     if remPiece: 
@@ -276,7 +280,9 @@ proc runAi() =
       playSound("Gunshot")
       playSound("Deanscream-2")
     drawCards() 
+    echo "discard sort:"
     hypothetical.cards = turn.player.cards
+    hypothetical.pieces = turn.player.piecesOnSquares
     hypothetical.cards = hypothetical.sortBlues()
     turn.player.cards = hypothetical.cards
     hypothetical.echoCards()
