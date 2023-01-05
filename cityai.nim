@@ -77,8 +77,8 @@ proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,square
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let 
     covers = hypothetical.blueCovers(card) 
-    availPieces = covers.mapIt(it.pieceNr).deduplicate.len
-    enoughPieces =  availPieces >= card.squares.required.len
+    availablePieces = covers.mapIt(it.pieceNr).deduplicate.len
+    enoughPieces =  availablePieces >= card.squares.required.len
     squaresCovered = covers.mapIt(it.squareNr).deduplicate.len 
     allSquaresCovered = squaresCovered == card.squares.required.deduplicate.len
   if not enoughPieces or not allSquaresCovered: 
@@ -235,7 +235,8 @@ proc reroll(hypothetical:Hypothetic): bool =
   let bestDiceMoves = hypothetical.bestDiceMoves()
   for diceMove in bestDiceMoves:
     echo "DiceMove: ",diceMove
-  isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
+  isDouble() and dice[1] notIn bestDiceMoves.mapIt(it.die)[^2..^1]
+#  isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
 
 proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
   if nrOfPiecesOn(square) == 1 and square notIn highways and square notIn gasStations:
