@@ -82,13 +82,13 @@ proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
     squaresCovered = covers.mapIt(it.squareNr).deduplicate.len 
     allSquaresCovered = squaresCovered == card.squares.required.deduplicate.len
   if not enoughPieces or not allSquaresCovered: 
-    echo card.title,": not covered: reject 1"
+#    echo card.title,": not covered: reject 1"
     return false
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
       echo card.title,": not covered: reject 2"
       return false
-  echo card.title,": covered"
+#  echo card.title,": covered"
   return true
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
@@ -101,7 +101,7 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
       if turn.player.cash+20_000 > cashAmountToWin():
         result = 100_000
       else:
-        result = 30_000 
+        result = 40_000 
     else:
       let
         piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
@@ -144,7 +144,7 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
   result = toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
-  echo "square: ",square,": eval: ",result
+#  echo "square: ",square,": eval: ",result
 
 proc evalPos(hypothetical:Hypothetic): int = 
   hypothetical.pieces.mapIt(hypothetical.evalSquare(it)).sum
@@ -155,6 +155,9 @@ proc baseEvalBoard(pieces:array[5,int]): EvalBoard =
     result[highway] = highwayVal
   for bar in bars: 
     result[bar] = barVal(pieces)
+  for square in 1..60:
+    if nrOfPiecesOn(square) == 1:
+      result[square] += 1000
 
 proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
   evalPos (
@@ -162,7 +165,7 @@ proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
     hypothetical.pieces,
     @[card]
   )
- 
+
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
 #  echo "evalBlues:"
   for card in hypothetical.cards:
@@ -223,6 +226,8 @@ proc aiCanRun(): bool =
 proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
+    if cashInPlans() > 0: 
+      playSound("coins-to-table-2")
 
 proc bestDiceMoves(hypothetical:Hypothetic): seq[Move] =
   let moves = hypothetical.hypoMoves()
