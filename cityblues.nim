@@ -49,21 +49,24 @@ proc keyboard (k:KeyEvent) =
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState) and turn != nil and removePieceDialog == nil:
-    if m.button == MouseLeft:
+    if turn.player.kind == human and m.button == MouseLeft:
       let mo = mouseOnMiniBlueNr()
-      if mo > -1 and mo < turn.player.cards.len: discardCard(mo)
+      if mo > -1 and mo < turn.player.cards.len: 
+        discardCard(mo)
+        sortBlues()
       if mouseOn() == "bluepile" and nrOfUndrawnBlueCards > 0:
         drawBlueCard()
         playSound("page-flip-2")
         if cashInPlans() > 0:
           playSound("coins-to-table-2")
+        sortBlues()
         echo $turn.player.color&" has cards:"
         for card in turn.player.cards:
           echo card.title
     echo "pos: ",m.pos
 
 proc drawUndrawnCardsNr(b:var Boxy) =
-  if nrOfUndrawnBlueCards > 0:
+  if nrOfUndrawnBlueCards > 0 and turn.player.kind == human:
     b.drawText(
       "undrawncardsnr",
       (bluePile.area.x+12).toFloat,

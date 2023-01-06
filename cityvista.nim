@@ -1,6 +1,7 @@
 import cityscape
 import cityplay
 import citytext
+import cityeval
 import times
 import strutils
 import sequtils
@@ -65,6 +66,13 @@ var
   squares*:array[0..60,AreaHandle]
   playerBatches:array[1..6,AreaHandle]
   removePieceDialog*:Dialog
+
+proc sortBlues*() =
+  turn.player.cards = (
+    baseEvalBoard(turn.player.piecesOnSquares),
+    turn.player.piecesOnSquares,
+    turn.player.cards
+  ).sortBlues
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -291,7 +299,7 @@ proc togglePlayerKind() =
       playSound("Blop-Mark_DiAngelo")
 
 proc moveReady(): bool = 
-  turn != nil and not isRollingDice()
+  turn != nil and turn.player.kind == human and not isRollingDice()
 
 proc setDiceMoved(square:int) =
   if not turn.diceMoved:
@@ -312,6 +320,7 @@ proc moveFromTo*(fromSquare,toSquare:int) =
     playSound("coins-to-table-2")
   echo "undrawn cards: ",nrOfUndrawnBlueCards
   playSound("driveBy")
+  sortBlues()
   if gameWon(): playSound("applause-2")
 
 proc moveSelectedPieceTo(toSquare:int) =

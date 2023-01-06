@@ -11,6 +11,10 @@ plan:
 {30,49}
 40000
 plan:
+Up yours
+{30,36}
+40000
+plan:
 Acquittal
 {33,10}
 40000
