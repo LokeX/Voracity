@@ -2,7 +2,6 @@ import boxy, opengl, windy
 import std/sequtils
 import std/os
 import slappy
-import strutils
 export boxy
 export windy
 export os
@@ -73,7 +72,6 @@ var
   calls*:seq[Call]
   mouseHandles*:seq[MouseHandle]
   bxy = newBoxy()
-  sounds:seq[tuple[name:string,sound:Sound]]
   sources:seq[tuple[name:string,source:Source]]
 
 bxy.scale(boxyScale)
@@ -88,7 +86,10 @@ proc winSize*(): IVec2 =
 proc playSound*(sound:string) =
   let soundSource = sources.mapIt(it.name).find(sound)
   if soundSource < 0:
-    let source = sounds[sounds.mapIt(it.name).find(sound)].sound.play()
+    let 
+      soundFile = "sounds\\"&sound&".wav"
+      source = newSound(soundFile).play()
+    echo "Loading sound source: ",soundFile
     sources.add (sound,source)
   else:
     sources[soundSource].source.stop()
@@ -147,15 +148,6 @@ proc newMouseEvent(button:Button): MouseEvent =
 func fileNames*(paths: seq[string]): seq[FileName] =
   for path in paths: 
     result.add (splitFile(path).name,path)
-
-proc loadSounds() =
-  let soundFiles = toSeq(walkFiles("sounds\\*.wav")).fileNames
-  for soundFile in soundFiles:
-    sounds.add (soundFile.name,newSound(soundFile.path))
-    echo soundFile.name
-    echo soundFile.path
-
-loadSounds()
 
 proc mouseOn*(h:MouseHandle): bool =
   let

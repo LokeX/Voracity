@@ -36,26 +36,29 @@ proc covers(pieceSquare,coverSquare:int): bool =
       return true
 
 proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
-  for blueSquareNr,blueSquare in card.squares.required:
-    for pieceNr,pieceSquare in hypothetical.pieces:
+  for pieceNr,pieceSquare in hypothetical.pieces:
+    for blueSquareNr,blueSquare in card.squares.required:
       if pieceSquare == blueSquare or pieceSquare.covers(blueSquare): 
         result.add (pieceNr,blueSquareNr)
 
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let 
-    covers = hypothetical.blueCovers(card) 
-    availablePieces = covers.mapIt(it.pieceNr).deduplicate.len
-    enoughPieces =  availablePieces >= card.squares.required.len
+    covers = hypothetical.blueCovers(card)
+    availablePieces = covers.mapIt(it.pieceNr).deduplicate
+    enoughPieces =  availablePieces.len >= card.squares.required.len
     squaresCovered = covers.mapIt(it.squareNr).deduplicate.len 
     allSquaresCovered = squaresCovered == card.squares.required.deduplicate.len
+  echo covers
   if not enoughPieces or not allSquaresCovered: 
 #    echo card.title,": not covered: reject 1"
     return false
-  for squareNr in 0..card.squares.required.len-1:
+
+#[   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
-      echo card.title,": not covered: reject 2"
+#      echo card.title,": not covered: reject 2"
       return false
-#  echo card.title,": covered"
+ ]#
+  echo card.title,": covered"
   return true
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
@@ -124,7 +127,7 @@ proc baseEvalBoard*(pieces:array[5,int]): EvalBoard =
     result[bar] = barVal(pieces)
   for square in 1..60:
     if nrOfPiecesOn(square) == 1:
-      result[square] += 1000
+      result[square] += 2000
 
 proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
   evalPos (

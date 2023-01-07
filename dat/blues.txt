@@ -7,12 +7,40 @@ plan:
 {57}
 20000
 plan:
+On the outside
+{36}
+20000
+plan:
 400 kilo
 {30,49}
 40000
 plan:
+Foreign aid
+{55,6}
+40000
+plan:
+Underhanded
+{22}
+20000
+plan:
+Small arms
+{6,57}
+40000
+plan:
+Bystanders
+{25,57}
+40000
+plan:
+Flay'em
+{10,39}
+40000
+plan:
 Up yours
 {30,36}
+40000
+plan:
+Hooters
+{21,25}
 40000
 plan:
 Acquittal
@@ -27,7 +55,7 @@ Burglary
 {8}
 20000
 plan:
-Cheat
+Pure luck
 {12}
 20000
 plan:
@@ -43,11 +71,11 @@ Duty free
 {11}
 20000
 plan:
-Ecstacy
+Delivery
 {30,19}
 40000
 plan:
-Euphoria
+Cold meds
 {45}
 20000
 plan:
@@ -55,7 +83,7 @@ Fishy cargo
 {49}
 20000
 plan:
-Harvest
+Outstanding
 {22,39}
 40000
 plan:
@@ -87,7 +115,7 @@ Borderless
 {49,55}
 40000
 plan:
-Grand design
+Grand designs
 {43,4}
 40000
 plan:
@@ -122,4 +150,19 @@ plan:
 Et spiritus sancti
 {48,7}
 40000
-Anal correction
+plan:
+Legalese
+{33,39}
+40000
+plan:
+Bail
+{33,36}
+40000
+plan:
+Lawfare
+{33}
+20000
+plan:
+Stiffs
+{21,26}
+20000
