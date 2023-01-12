@@ -76,7 +76,7 @@ proc drawUndrawnCardsNr(b:var Boxy) =
     )
 
 proc squaredPlans(plan:BlueCard): seq[string] =
-  let (s,p) = planedSquares(plan)
+  let (s,p) = requiredCardSquares(plan)
   toSeq(0..s.len-1).mapIt(p[it].intToStr&" piece on: "&squares[s[it]].name)
 
 proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
@@ -92,7 +92,7 @@ proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
   let 
     sp = squaredPlans(bigBlue)
     a:Area = (planbg.area.x+10,planbg.area.y+90,planbg.area.w-20,(sp.len+1)*20)
-    (ps,_) = planedSquares(bigBlue)
+    (ps,_) = requiredCardSquares(bigBlue)
   for s in ps:
     b.drawRect(squares[s].area.toRect(),playerColorsTrans[turn.player.color])
   b.drawRect(a.toRect,color(1,1,1))

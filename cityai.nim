@@ -5,18 +5,10 @@ import cityeval
 import citytext
 import strutils
 import sequtils
-import math
 import algorithm
 import os
-import sugar
-
-const
-  highwayVal = 1000
-  valBar = 2500
-  posPercent = [1.0,0.3,0.3,0.3,0.3,0.3,0.3,0.25,0.24,0.22,0.20,0.18,0.15]
 
 type
-  Move = tuple[pieceNr,die,fromSquare,toSquare,eval:int]
   Square = object
     vals:seq[tuple[evalDesc:string,val:int]]
     nrOfPlayerPieces*:array[6,int]
@@ -45,32 +37,6 @@ proc blueVals() =
         )
       )
 
-proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
-  var pieces = hypo.pieces
-  pieces[pieceNr] = toSquare
-  (hypo.board,pieces,hypo.cards).evalPos()
-
-proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
-  let
-    squares = moveToSquares(fromSquare,die)
-    evals = squares.mapIt(hypothetical.evalMove(pieceNr,it))
-    bestEval = evals.maxIndex
-    bestSquare = squares[bestEval]
-    eval = evals[bestEval]
-  result = (pieceNr,die,fromSquare,bestSquare,eval)
-
-proc move(hypothetical:Hypothetic,dice:openArray[int]): Move = 
-  var moves:seq[Move]
-  for pieceNr,fromSquare in hypothetical.pieces:
-    for die in dice:
-      moves.add hypothetical.bestMove(pieceNr,fromSquare,die)
-  echo moves
-  result = moves.sortedByIt(it.eval)[^1]
-
-proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
-  for pieceNr,fromSquare in hypothetical.pieces:
-    for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
-
 proc aiCanRun(): bool =
   not aiWorking and 
   turn != nil and 
@@ -82,13 +48,6 @@ proc drawCards() =
     drawBlueCard()
     if cashInPlans() > 0: 
       playSound("coins-to-table-2")
-
-proc bestDiceMoves(hypothetical:Hypothetic): seq[Move] =
-  let moves = hypothetical.hypoMoves()
-  for die in 1..6:
-    let dieMoves = moves.filterIt(it.die == die)
-    result.add dieMoves[dieMoves.mapIt(it.eval).maxIndex()]
-  result.sortedByIt(it.eval)
 
 proc reroll(hypothetical:Hypothetic): bool =
   let bestDiceMoves = hypothetical.bestDiceMoves()
@@ -109,39 +68,39 @@ proc echoCards(hypothetical:Hypothetic) =
     echo "card: ",card.title
     echo "eval: ",card.eval
 
+proc hypotheticalInit(): Hypothetic =
+  (baseEvalBoard(turn.player.piecesOnSquares),
+  turn.player.piecesOnSquares,
+  turn.player.cards)
+
+proc moveAi(hypothetical:Hypothetic) =
+  let 
+    move = hypothetical.move(dice)
+    remPiece = hypothetical.aiRemovePiece(move.toSquare)
+  var
+    pieceRem = removePieceOn(move.toSquare)
+  echo "move: ",move
+  moveFromTo(move.fromSquare,move.toSquare)
+  if remPiece: 
+    removePlayersPiece(pieceRem)
+    playSound("Gunshot")
+    playSound("Deanscream-2")
+
 proc runAi() =
   aiWorking = true
   drawCards()
-  var 
-    hypothetical:Hypothetic = (
-      baseEvalBoard(turn.player.piecesOnSquares),
-      turn.player.piecesOnSquares,
-      turn.player.cards 
-    )
+  var hypothetical = hypotheticalInit()
   hypothetical.cards = hypothetical.sortBlues()
   turn.player.cards = hypothetical.cards
   hypo = hypothetical
-  echo "board: ",hypothetical.board
   echo "dice: ",dice
-  echo "posEval: ",hypothetical.evalPos()
   hypothetical.echoCards()
-
   if not hypothetical.reroll():
-    let 
-      move = hypothetical.move(dice)
-      remPiece = hypothetical.aiRemovePiece(move.toSquare)
-    var
-      pieceRem = removePieceOn(move.toSquare)
-    echo "move: ",move
-    moveFromTo(move.fromSquare,move.toSquare)
-    if remPiece: 
-      removePlayersPiece(pieceRem)
-      playSound("Gunshot")
-      playSound("Deanscream-2")
+    hypothetical.moveAi()
+    hypothetical.pieces = turn.player.piecesOnSquares
     drawCards() 
     echo "discard sort:"
     hypothetical.cards = turn.player.cards
-    hypothetical.pieces = turn.player.piecesOnSquares
     hypothetical.cards = hypothetical.sortBlues()
     turn.player.cards = hypothetical.cards
     hypothetical.echoCards()

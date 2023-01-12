@@ -42,7 +42,8 @@ type
 const 
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
-  defaultPlayerKinds = [computer,none,none,none,none,none]
+  defaultPlayerKinds = [computer,computer,none,none,none,none]
+  banks* = [3,14,24,38,52]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
   bars* = [1,16,18,20,28,35,40,46,51,54]
@@ -114,31 +115,44 @@ func getParsedInt(str:string): int =
   try:str.parseInt except ValueError: 0
 
 func parseSquares(str:string,closures:array[2,char]): seq[int] =
-  let (f,l) = (str.find(closures[0])+1,str.find(closures[1])-1)
-  if -1 in [f,l,l-f]: result = @[] else:
-    result = str[f..l].split(',').mapIt(it.getParsedInt())
+  let (f,l) = (str.find(closures[0]),str.find(closures[1]))
+  if -1 in [f,l]: result = @[] else:
+    result = str[f+1..l-1].split(',').mapIt(it.getParsedInt())
 
 func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
-  var a,b:seq[int]
+  var b:seq[int]
   for protoCard in protoCards:
     result.add(
       BlueCard(
         kind:protoCard[0],
         title:protoCard[1],
-        squares:(parseSquares(protoCard[2],['{','}']),a,b),
+        squares:(
+          parseSquares(protoCard[2],['{','}']),
+          parseSquares(protoCard[2],['[',']']),
+          b
+        ),
         cash:getParsedInt(protoCard[3])
       )
     )
 
-proc planedSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
+proc oneInMoreCardSquaresTitle*(plan:BlueCard): string =
+  if plan.squares.oneInMoreRequired.anyIt(it in banks): return "Bank"
+
+proc requiredCardSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
   let squares = plan.squares.required.deduplicate()
   (squares,squares.mapIt(plan.squares.required.count(it)))
 
 proc isCashable(plan:BlueCard): bool =
   let 
-    (squares,nrOfPiecesRequired) = plan.planedSquares()
+    (squares,nrOfPiecesRequired) = plan.requiredCardSquares()
     nrOfPiecesOnSquares = squares.mapIt(turn.player.piecesOnSquares.count(it))
-  toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
+    requiredOk = toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
+    oneInMoreRequired = plan.squares.oneInMoreRequired.len > 0
+  if requiredOk:
+    if oneInMoreRequired: 
+      return turn.player.piecesOnSquares.anyIt(it in plan.squares.oneInMoreRequired)
+    else:
+      return true
 
 proc playerPlans(): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
   for card in turn.player.cards:
@@ -158,11 +172,6 @@ proc drawBlueCard*() =
   if nrOfUndrawnBlueCards > 0:
     if blueCards.len == 0:
       shuffleBlueCards()
-
-#[       blueCards.add(usedCards)
-      usedCards.setLen(0)
-      blueCards.shuffle()
- ]#
     turn.player.cards.add(blueCards.pop)
     dec nrOfUndrawnBlueCards
 
@@ -273,14 +282,7 @@ proc moveToSquares*(fromSquare:int,dice:array[2,int]): seq[int] =
     for i,die in dice:
       if i == 0 or not isDouble():
         result.add(moveToSquares(fromSquare,die))
-
-#[         if fromsquare != 0: result.add(moveToSquare(fromSquare,die))
-        if fromSquare in highways or fromsquare == 0:
-          if fromSquare == 0: result.add(highways.mapIt(moveToSquare(it,die)))
-          result.add(gasStations.mapIt(moveToSquare(it,die)))
-
-    result = result.filterIt(it != fromSquare).deduplicate
- ]#
+  result.deduplicate
  
 proc toggleKind*(kind:PlayerKind): PlayerKind =
   case kind
@@ -303,4 +305,5 @@ for card in blueCards:
   echo card.title
   echo card.kind
   echo card.squares.required
+  echo card.squares.oneInMorerequired
   echo card.cash

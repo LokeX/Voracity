@@ -5,11 +5,12 @@ import algorithm
 import sugar
 
 const
-  highwayVal = 1000
+  highwayVal* = 1000
   valBar = 2500
   posPercent = [1.0,0.3,0.3,0.3,0.3,0.3,0.3,0.25,0.24,0.22,0.20,0.18,0.15]
 
 type
+  Move* = tuple[pieceNr,die,fromSquare,toSquare,eval:int]
   EvalBoard* = array[61,int]
   Hypothetic* = tuple
     board:array[61,int]
@@ -35,6 +36,9 @@ proc covers(pieceSquare,coverSquare:int): bool =
     if coverSquare in moveToSquares(pieceSquare,die):
       return true
 
+proc isCovered(hypothetical:Hypothetic, square:int): bool =
+  hypothetical.pieces.anyIt(it.covers(square))
+
 proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
   for pieceNr,pieceSquare in hypothetical.pieces:
     for blueSquareNr,blueSquare in card.squares.required:
@@ -46,40 +50,54 @@ proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
     covers = hypothetical.blueCovers(card)
     availablePieces = covers.mapIt(it.pieceNr).deduplicate
     enoughPieces =  availablePieces.len >= card.squares.required.len
-    squaresCovered = covers.mapIt(it.squareNr).deduplicate.len 
-    allSquaresCovered = squaresCovered == card.squares.required.deduplicate.len
-  echo covers
-  if not enoughPieces or not allSquaresCovered: 
-#    echo card.title,": not covered: reject 1"
+  if not enoughPieces: #or not allSquaresCovered: 
     return false
-
-#[   for squareNr in 0..card.squares.required.len-1:
+  for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
-#      echo card.title,": not covered: reject 2"
       return false
- ]#
-  echo card.title,": covered"
+
+#  echo card.title,": covered"
   return true
+
+proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
+  let 
+    requiredSquare = card.squares.required[0]
+    piecesOnRequiredSquare = hypothetical.piecesOn(requiredSquare) > 0
+  if square == requiredSquare:
+    if piecesOnRequiredSquare:
+      result = 40_000
+    else:
+      result = 20_000
+  if piecesOnRequiredSquare and square in card.squares.oneInMoreRequired:
+    if hypothetical.piecesOn(square) > 0: 
+      result = 40_000
+    else: 
+      result = 20_000
+
+proc oneRequiredBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
+  if card.squares.oneInMoreRequired.len > 0:
+    result = hypothetical.oneInMoreBonus(card,square)
+  elif turn.player.cash+20_000 > cashAmountToWin():
+    result = 100_000
+  else:
+    result = 40_000 
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   let
-    blueSquares = card.squares.required.deduplicate
-    squareIndex = blueSquares.find(square)
-  if squareIndex >= 0:
+    requiredSquares = card.squares.required.deduplicate
+    squareIndex = requiredSquares.find(square)
+  if squareIndex >= 0 or square in card.squares.oneInMoreRequired:
     let nrOfPiecesRequired = card.squares.required.len
     if nrOfPiecesRequired == 1: 
-      if turn.player.cash+20_000 > cashAmountToWin():
-        result = 100_000
-      else:
-        result = 40_000 
+      result = hypothetical.oneRequiredBonus(card,square)
     else:
       let
-        piecesOn = blueSquares.mapIt(hypothetical.pieces.count(it))
-        requiredPiecesOn = blueSquares.mapIt(card.squares.required.count(it))
+        piecesOn = requiredSquares.mapIt(hypothetical.pieces.count(it))
+        requiredPiecesOn = requiredSquares.mapIt(card.squares.required.count(it))
         freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
       if freePieces < 1 and hypothetical.blueCovered(card):
         var nrOfPieces = 1
-        for square in 0..blueSquares.len-1:
+        for square in 0..requiredSquares.len-1:
           if piecesOn[square] > requiredPiecesOn[square]:
             nrOfPieces += requiredPiecesOn[square]
           else:
@@ -160,3 +178,37 @@ proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
       cards.del(cards.find(card))
     result.add bestCombo
   result.add cards
+
+proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
+  var pieces = hypo.pieces
+  pieces[pieceNr] = toSquare
+  (hypo.board,pieces,hypo.cards).evalPos()
+
+proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
+  let
+    squares = moveToSquares(fromSquare,die)
+    evals = squares.mapIt(hypothetical.evalMove(pieceNr,it))
+    bestEval = evals.maxIndex
+    bestSquare = squares[bestEval]
+    eval = evals[bestEval]
+  result = (pieceNr,die,fromSquare,bestSquare,eval)
+
+proc move*(hypothetical:Hypothetic,dice:openArray[int]): Move = 
+  var moves:seq[Move]
+  for pieceNr,fromSquare in hypothetical.pieces:
+    for die in dice:
+      moves.add hypothetical.bestMove(pieceNr,fromSquare,die)
+  echo moves
+  result = moves.sortedByIt(it.eval)[^1]
+
+proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
+  for pieceNr,fromSquare in hypothetical.pieces:
+    for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
+
+proc bestDiceMoves*(hypothetical:Hypothetic): seq[Move] =
+  let moves = hypothetical.hypoMoves()
+  for die in 1..6:
+    let dieMoves = moves.filterIt(it.die == die)
+    result.add dieMoves[dieMoves.mapIt(it.eval).maxIndex()]
+  result.sortedByIt(it.eval)
+

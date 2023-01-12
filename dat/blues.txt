@@ -3,6 +3,30 @@ Coup
 {60,60,6,6}
 150000
 plan:
+Dry cleaning
+{13}[3,14,24,38,52]
+30000
+plan:
+Light load
+{49}[23,34,42,44,50]
+30000
+plan:
+Road runner
+{55}[5,17,29,41,53]
+30000
+plan:
+Slum lord
+{22}[56,58,59]
+35000
+plan:
+Laundry
+{12}[3,14,24,38,52]
+30000
+plan:
+Financing
+{22}[3,14,24,38,52]
+30000
+plan:
 125 gram
 {57}
 20000
@@ -13,6 +37,10 @@ On the outside
 plan:
 400 kilo
 {30,49}
+40000
+plan:
+Speciments
+{25,36}
 40000
 plan:
 Foreign aid
