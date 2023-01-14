@@ -5,7 +5,6 @@ import cityeval
 import citytext
 import strutils
 import sequtils
-import algorithm
 import os
 
 type
@@ -26,7 +25,7 @@ proc boardVals() =
   for highway in highways:
     board[highway].vals.add ("highway",highwayVal)
   for square in bars:
-      board[square].vals.add ("bar",barVal(turn.player.piecesOnSquares))
+      board[square].vals.add ("bar",1000)
 
 proc blueVals() =
   for card in turn.player.cards:
@@ -69,7 +68,11 @@ proc echoCards(hypothetical:Hypothetic) =
     echo "eval: ",card.eval
 
 proc hypotheticalInit(): Hypothetic =
-  (baseEvalBoard(turn.player.piecesOnSquares),
+  var board:EvalBoard
+  (baseEvalBoard(
+    (board,
+    turn.player.piecesOnSquares,
+    turn.player.cards)),
   turn.player.piecesOnSquares,
   turn.player.cards)
 

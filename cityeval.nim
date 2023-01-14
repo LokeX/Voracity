@@ -19,7 +19,12 @@ type
 
 proc countBars(pieces:array[5,int]): int = pieces.countIt(it in bars)
 
-proc barVal*(pieces:array[5,int]): int = valBar-(500*countBars(pieces))
+proc cardVal(hypothetical:Hypothetic): int =
+  let val = 3 - hypothetical.cards.len
+  if val > 0: return val*1000
+
+proc barVal*(hypothetical:Hypothetic): int = 
+  valBar-(500*countBars(hypothetical.pieces))+cardVal(hypothetical)
 
 func piecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.pieces.count(square)
@@ -135,19 +140,19 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
 proc evalPos*(hypothetical:Hypothetic): int = 
   hypothetical.pieces.mapIt(hypothetical.evalSquare(it)).sum
 
-proc baseEvalBoard*(pieces:array[5,int]): EvalBoard =
+proc baseEvalBoard*(hypothetical:Hypothetic): EvalBoard =
   result[0] = 4000
   for highway in highways: 
     result[highway] = highwayVal
   for bar in bars: 
-    result[bar] = barVal(pieces)
+    result[bar] = barVal(hypothetical)
   for square in 1..60:
     if nrOfPiecesOn(square) == 1:
       result[square] += 2000
 
 proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
   evalPos (
-    baseEvalBoard(hypothetical.pieces),
+    baseEvalBoard(hypothetical),
     hypothetical.pieces,
     @[card]
   )
@@ -164,7 +169,7 @@ proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
 proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
   var cards = hypothetical.evalBlues
   if cards.len > 3:
-    let board = baseEvalBoard(hypothetical.pieces)
+    let board = baseEvalBoard(hypothetical)
     var evals:seq[tuple[cards:seq[BlueCard],eval:int]]
     for i in 0..cards.len-1:
       let eval = (board,hypothetical.pieces,cards[0..2]).evalPos
@@ -196,7 +201,7 @@ proc bestBlueCombo(hypothetical:Hypothetic,combos:seq[seq[BlueCard]]): seq[BlueC
   var evals:seq[tuple[eval:int,combo:seq[BlueCard]]]
   for combo in combos:
     let eval = evalPos(
-      (baseEvalBoard(hypothetical.pieces),
+      (baseEvalBoard(hypothetical),
       hypothetical.pieces,
       combo)
     )

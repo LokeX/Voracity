@@ -68,8 +68,13 @@ var
   removePieceDialog*:Dialog
 
 proc sortBlues*() =
+  var board:EvalBoard
   turn.player.cards = (
-    baseEvalBoard(turn.player.piecesOnSquares),
+    baseEvalBoard(
+      (board,
+      turn.player.piecesOnSquares,
+      turn.player.cards)
+    ),
     turn.player.piecesOnSquares,
     turn.player.cards
   ).sortBlues
