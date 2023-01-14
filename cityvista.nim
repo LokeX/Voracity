@@ -68,8 +68,11 @@ var
   removePieceDialog*:Dialog
 
 proc sortBlues*() =
-  var board:EvalBoard
-  turn.player.cards = (
+#  var board:EvalBoard
+  turn.player.cards = hypotheticalInit().comboSortBlues
+  echo "old sort: "
+  for blue in hypotheticalInit().sortBlues: echo blue.title
+#[   (
     baseEvalBoard(
       (board,
       turn.player.piecesOnSquares,
@@ -77,7 +80,9 @@ proc sortBlues*() =
     ),
     turn.player.piecesOnSquares,
     turn.player.cards
-  ).sortBlues
+  )
+ ]#  
+#  .comboSortBlues
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:
@@ -466,21 +471,7 @@ proc drawTopBar(b:var Boxy) =
       "(d)ice(##)set",
       fontFace(ibmB,20,color(1,1,1))
     )
-#[   b.drawRect((0,0,windowWidth(),40).toRect,color(75,150,240))
-  b.drawText("text7",10,5,mouseOn(),fontFace(ibmB,20,color(1,1,1)))
-  b.drawText(
-    "text9",
-    300,5,
-    $(if mouseOnPlayer()!=nil:mouseOnPlayer() else:players[1]).color,
-    fontFace(ibmB,20,color(1,1,1))
-  )
-  b.drawText(
-    "text8",
-    400,5,
-    "Square nr: "&(if mouseOnSquareNr() == 0: "n/a" else: mouseOnSquareNr().intToStr),
-    fontFace(ibmB,20,color(1,1,1))
-  )
- ]#
+
 proc draw (b:var Boxy) =
   b.drawDice()
   b.drawBoard()

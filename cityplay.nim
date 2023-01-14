@@ -43,6 +43,7 @@ const
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
   defaultPlayerKinds = [computer,computer,none,none,none,none]
+  shops* = [23,34,42,44,50]
   banks* = [3,14,24,38,52]
   highways* = [5,17,29,41,53]
   gasStations* = [2,15,27,37,47]
@@ -136,7 +137,16 @@ func newBlueCards(protoCards:seq[ProtoCard]): seq[BlueCard] =
     )
 
 proc oneInMoreCardSquaresTitle*(plan:BlueCard): string =
-  if plan.squares.oneInMoreRequired.anyIt(it in banks): return "Bank"
+  if plan.squares.oneInMoreRequired.anyIt(it in banks): 
+    return "Bank"
+  elif plan.squares.oneInMoreRequired.anyIt(it in shops): 
+    return "Shop"
+  elif plan.squares.oneInMoreRequired.anyIt(it in highways): 
+    return "Highway"
+  elif plan.squares.oneInMoreRequired.anyIt(it in gasStations): 
+    return "Gasstation"
+  elif plan.squares.oneInMoreRequired.anyIt(it in bars): 
+    return "Bar"
 
 proc requiredCardSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
   let squares = plan.squares.required.deduplicate()

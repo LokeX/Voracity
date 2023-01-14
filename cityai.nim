@@ -67,15 +67,6 @@ proc echoCards(hypothetical:Hypothetic) =
     echo "card: ",card.title
     echo "eval: ",card.eval
 
-proc hypotheticalInit(): Hypothetic =
-  var board:EvalBoard
-  (baseEvalBoard(
-    (board,
-    turn.player.piecesOnSquares,
-    turn.player.cards)),
-  turn.player.piecesOnSquares,
-  turn.player.cards)
-
 proc moveAi(hypothetical:Hypothetic) =
   let 
     move = hypothetical.move(dice)
@@ -93,23 +84,24 @@ proc runAi() =
   aiWorking = true
   drawCards()
   var hypothetical = hypotheticalInit()
-  hypothetical.cards = hypothetical.sortBlues()
+  hypothetical.cards = hypothetical.comboSortBlues()
   turn.player.cards = hypothetical.cards
   hypo = hypothetical
   echo "dice: ",dice
   hypothetical.echoCards()
-  echo "comboSort:"
-  for card in hypothetical.comboSortBlues: echo card.title
+  echo "old sort:"
+  for blue in hypothetical.sortBlues(): echo blue.title
   if not hypothetical.reroll():
     hypothetical.moveAi()
     hypothetical.pieces = turn.player.piecesOnSquares
     drawCards() 
     echo "discard sort:"
     hypothetical.cards = turn.player.cards
-    hypothetical.cards = hypothetical.sortBlues()
+    hypothetical.cards = hypothetical.comboSortBlues()
     turn.player.cards = hypothetical.cards
     hypothetical.echoCards()
-    for card in hypothetical.comboSortBlues: echo card.title
+    echo "old sort:"
+    for blue in hypothetical.sortBlues(): echo blue.title
   else:
     echo "reroll"
     sleep(1000)

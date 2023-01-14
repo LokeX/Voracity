@@ -89,12 +89,17 @@ proc drawBigBlue(b:var Boxy,bigBlue:BlueCard) =
     bigBlue.title,
     fontFace(point,48,color(0,0,1))
   )
-  let 
-    sp = squaredPlans(bigBlue)
+  var sp = squaredPlans(bigBlue)
+  if bigBlue.squares.oneInMoreRequired.len > 0:
+    sp.add "1 piece on any "&bigBlue.oneInMoreCardSquaresTitle()
+  sp.add("Cash reward: "&bigBlue.cash.intToStr.insertSep(sep='.'))
+  let
     a:Area = (planbg.area.x+10,planbg.area.y+90,planbg.area.w-20,(sp.len+1)*20)
     (ps,_) = requiredCardSquares(bigBlue)
   for s in ps:
     b.drawRect(squares[s].area.toRect(),playerColorsTrans[turn.player.color])
+  for square in bigBlue.squares.oneInMoreRequired:
+    b.drawRect(squares[square].area.toRect(),playerColorsTrans[turn.player.color])
   b.drawRect(a.toRect,color(1,1,1))
   b.drawAreaShadow(a,2,color(0,0,0,150))
   for i,text in sp:

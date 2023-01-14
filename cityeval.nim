@@ -182,8 +182,8 @@ proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
     result.add bestCombo
   result.add cards
 
-proc combosMatch(comboA,comboB:seq[BlueCard]): bool =
-  comboA.anyIt(it notIn comboB)
+proc comboMatch(comboA,comboB:seq[BlueCard]): bool =
+  comboA.allIt(it in comboB)
 
 proc blueCombos(sortCards,combo:seq[BlueCard],combos:var seq[seq[BlueCard]]) =
   if combo.len < 3:
@@ -195,16 +195,19 @@ proc blueCombos(sortCards,combo:seq[BlueCard],combos:var seq[seq[BlueCard]]) =
       var newCombo = combo
       newCombo.add card    
       blueCombos(cardsNotInCombo,newCombo,combos)
-  elif not combos.anyIt(combosMatch(it,combo)): combos.add combo
+  elif not combos.anyIt(it.comboMatch(combo)): combos.add combo
 
 proc bestBlueCombo(hypothetical:Hypothetic,combos:seq[seq[BlueCard]]): seq[BlueCard] =
   var evals:seq[tuple[eval:int,combo:seq[BlueCard]]]
   for combo in combos:
+    echo "combo:"
+    for blue in combo: echo blue.title
     let eval = evalPos(
       (baseEvalBoard(hypothetical),
       hypothetical.pieces,
       combo)
     )
+    echo "eval: ",eval
     evals.add (eval,combo)
   evals.sortedByIt(it.eval)[^1].combo
 
@@ -256,4 +259,13 @@ proc bestDiceMoves*(hypothetical:Hypothetic): seq[Move] =
     let dieMoves = moves.filterIt(it.die == die)
     result.add dieMoves[dieMoves.mapIt(it.eval).maxIndex()]
   result.sortedByIt(it.eval)
+
+proc hypotheticalInit*(): Hypothetic =
+  var board:EvalBoard
+  (baseEvalBoard(
+    (board,
+    turn.player.piecesOnSquares,
+    turn.player.cards)),
+  turn.player.piecesOnSquares,
+  turn.player.cards)
 
