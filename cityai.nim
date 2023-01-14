@@ -95,6 +95,8 @@ proc runAi() =
   hypo = hypothetical
   echo "dice: ",dice
   hypothetical.echoCards()
+  echo "comboSort:"
+  for card in hypothetical.comboSortBlues: echo card.title
   if not hypothetical.reroll():
     hypothetical.moveAi()
     hypothetical.pieces = turn.player.piecesOnSquares
@@ -104,6 +106,7 @@ proc runAi() =
     hypothetical.cards = hypothetical.sortBlues()
     turn.player.cards = hypothetical.cards
     hypothetical.echoCards()
+    for card in hypothetical.comboSortBlues: echo card.title
   else:
     echo "reroll"
     sleep(1000)

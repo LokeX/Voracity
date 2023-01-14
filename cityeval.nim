@@ -55,8 +55,6 @@ proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
       return false
-
-#  echo card.title,": covered"
   return true
 
 proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
@@ -66,7 +64,7 @@ proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
   if square == requiredSquare:
     if piecesOnRequiredSquare:
       result = 40_000
-    else:
+    elif card.squares.oneInMoreRequired.anyIt(hypothetical.isCovered(it)):
       result = 20_000
   if piecesOnRequiredSquare and square in card.squares.oneInMoreRequired:
     if hypothetical.piecesOn(square) > 0: 
@@ -178,6 +176,48 @@ proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
       cards.del(cards.find(card))
     result.add bestCombo
   result.add cards
+
+proc combosMatch(comboA,comboB:seq[BlueCard]): bool =
+  comboA.anyIt(it notIn comboB)
+
+proc blueCombos(sortCards,combo:seq[BlueCard],combos:var seq[seq[BlueCard]]) =
+  if combo.len < 3:
+    let cardsNotInCombo = 
+      if combo.len > 0: 
+        sortCards.filterIt(it notIn combo)
+      else: sortCards
+    for card in cardsNotInCombo:
+      var newCombo = combo
+      newCombo.add card    
+      blueCombos(cardsNotInCombo,newCombo,combos)
+  elif not combos.anyIt(combosMatch(it,combo)): combos.add combo
+
+proc bestBlueCombo(hypothetical:Hypothetic,combos:seq[seq[BlueCard]]): seq[BlueCard] =
+  var evals:seq[tuple[eval:int,combo:seq[BlueCard]]]
+  for combo in combos:
+    let eval = evalPos(
+      (baseEvalBoard(hypothetical.pieces),
+      hypothetical.pieces,
+      combo)
+    )
+    evals.add (eval,combo)
+  evals.sortedByIt(it.eval)[^1].combo
+
+proc comboSortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
+  if hypothetical.cards.len > 3:
+    var 
+      combo:seq[BlueCard]
+      combos:seq[seq[BlueCard]]
+    hypothetical.cards.blueCombos(combo,combos)
+    echo "combosLen: ",combos.len
+    let bestCombo = hypothetical.bestBlueCombo(combos)
+    result.add bestCombo
+    result.add evalBlues((
+      hypothetical.board,
+      hypothetical.pieces,
+      hypothetical.cards.filterIt(it notIn bestCombo))
+    )
+  else: return hypothetical.evalBlues
 
 proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypo.pieces
