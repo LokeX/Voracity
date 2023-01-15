@@ -49,18 +49,17 @@ proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,square
     for blueSquareNr,blueSquare in card.squares.required:
       if pieceSquare == blueSquare or pieceSquare.covers(blueSquare): 
         result.add (pieceNr,blueSquareNr)
+        if pieceSquare == blueSquare: break
 
 proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let 
     covers = hypothetical.blueCovers(card)
     availablePieces = covers.mapIt(it.pieceNr).deduplicate
     enoughPieces =  availablePieces.len >= card.squares.required.len
-  if not enoughPieces: #or not allSquaresCovered: 
-    return false
   for squareNr in 0..card.squares.required.len-1:
     if covers.filterIt(it.squareNr == squareNr).len == 0:
       return false
-  return true
+  return enoughPieces
 
 proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
   let 
@@ -265,7 +264,8 @@ proc hypotheticalInit*(): Hypothetic =
   (baseEvalBoard(
     (board,
     turn.player.piecesOnSquares,
-    turn.player.cards)),
+    turn.player.cards)
+  ),
   turn.player.piecesOnSquares,
   turn.player.cards)
 

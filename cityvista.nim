@@ -472,9 +472,15 @@ proc drawTopBar(b:var Boxy) =
       fontFace(ibmB,20,color(1,1,1))
     )
 
+proc drawTest(b:var Boxy) =
+  var 
+    img:Image = newImage(100,100)
+    ctx:Context = newContext(img)
+
 proc draw (b:var Boxy) =
   b.drawDice()
   b.drawBoard()
+  b.drawTest()
   b.drawPlayerBatches()
   b.drawMoveSquares()
   b.drawPiecesOnSquares()
