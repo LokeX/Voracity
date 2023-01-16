@@ -220,25 +220,7 @@ proc comboSortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
       hypothetical.pieces,
       hypothetical.cards.filterIt(it notIn bestCombo))
     )
-
-proc isCashable(hypothetical:Hypothetic,plan:BlueCard): bool =
-  let 
-    (squares,nrOfPiecesRequired) = plan.requiredCardSquares()
-    nrOfPiecesOnSquares = squares.mapIt(hypothetical.pieces.count(it))
-    requiredOk = toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
-    oneInMoreRequired = plan.squares.oneInMoreRequired.len > 0
-  if requiredOk:
-    if oneInMoreRequired: 
-      return hypothetical.pieces.anyIt(it in plan.squares.oneInMoreRequired)
-    else:
-      return true
-
-proc playerPlans(hypothetical:Hypothetic): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
-  for card in hypothetical.cards:
-    if hypothetical.isCashable(card):
-      result.cashablePlans.add(card)
-    else:
-      result.notCashablePlans.add(card)
+  else: return hypothetical.evalBlues
 
 proc removePiece(hypothetical:Hypothetic,square:int): bool =
   square.hasRemovablePiece and
@@ -246,15 +228,21 @@ proc removePiece(hypothetical:Hypothetic,square:int): bool =
   turn.player.hasPieceOn(square) and
   hypothetical.requiredPiecesOn(square) < 2
 
+proc player(hypothetical:Hypothetic): Player =
+  Player(piecesOnSquares:hypothetical.pieces,cards:hypothetical.cards)
+
 proc evalMove(hypothetical:Hypothetic,pieceNr,toSquare:int): int =
   var 
     pieces = hypothetical.pieces
-#    cards = hypothetical.cards.filterIt(it notIn hypothetical.playerPlans.cashablePlans)
   if hypothetical.removePiece(toSquare):
     pieces[pieceNr] = 0
   else:
     pieces[pieceNr] = toSquare
-  (hypothetical.board,pieces,hypothetical.cards).evalPos()
+  let
+    cards = hypothetical.cards.filterIt(it notIn hypothetical.player.plans.cashable)
+    before = (hypothetical.board,pieces,hypothetical.cards).evalPos()
+    after = (hypothetical.board,pieces,cards).evalPos()
+  before+(before-after)
 
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
   let

@@ -45,6 +45,7 @@ proc aiCanRun(): bool =
 proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
+    for card in turn.player.cards: echo "player draws: ",card.title
     if cashInPlans() > 0: 
       playSound("coins-to-table-2")
 

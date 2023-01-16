@@ -156,31 +156,34 @@ proc requiredCardSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
   let squares = plan.squares.required.deduplicate()
   (squares,squares.mapIt(plan.squares.required.count(it)))
 
-proc isCashable(plan:BlueCard): bool =
+proc hasCashable*(player:Player,plan:BlueCard): bool =
   let 
     (squares,nrOfPiecesRequired) = plan.requiredCardSquares()
-    nrOfPiecesOnSquares = squares.mapIt(turn.player.piecesOnSquares.count(it))
+    nrOfPiecesOnSquares = squares.mapIt(player.piecesOnSquares.count(it))
     requiredOk = toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
     oneInMoreRequired = plan.squares.oneInMoreRequired.len > 0
   if requiredOk:
     if oneInMoreRequired: 
-      return turn.player.piecesOnSquares.anyIt(it in plan.squares.oneInMoreRequired)
+      return player.piecesOnSquares.anyIt(it in plan.squares.oneInMoreRequired)
     else:
       return true
 
-proc playerPlans(): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
-  for card in turn.player.cards:
-    if card.isCashable:
-      result.cashablePlans.add(card)
+proc plans*(player:Player): tuple[cashable,notCashable:seq[BlueCard]] =
+  for card in player.cards:
+    if player.hasCashable(card):
+      result.cashable.add(card)
     else:
-      result.notCashablePlans.add(card)
+      result.notCashable.add(card)
+
+proc plans*(): tuple[cashable,notCashable:seq[BlueCard]] =
+  turn.player.plans
 
 proc cashInPlans*(): int =
-  let (cashablePlans,notCashablePlans) = playerPlans()
-  usedCards.add(cashablePlans.sortedByIt(it.cash))
-  turn.player.cards = notCashablePlans
-  turn.player.cash += cashablePlans.mapIt(it.cash).sum
-  cashablePlans.len
+  let (cashable,notCashable) = turn.player.plans
+  usedCards.add(cashable.sortedByIt(it.cash))
+  turn.player.cards = notCashable
+  turn.player.cash += cashable.mapIt(it.cash).sum
+  cashable.len
 
 proc drawBlueCard*() = 
   if nrOfUndrawnBlueCards > 0:
