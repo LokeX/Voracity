@@ -55,30 +55,34 @@ proc reroll(hypothetical:Hypothetic): bool =
   isDouble() and dice[1] notIn bestDiceMoves.mapIt(it.die)[^2..^1]
 #  isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
 
-proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
-  if nrOfPiecesOn(square) == 1 and square notIn highways and square notIn gasStations:
-    if turn.player.hasPieceOn(square):
-      return hypothetical.requiredPiecesOn(square) < 2
-    else:
-      return true
-
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:
     echo "card: ",card.title
     echo "eval: ",card.eval
 
+proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
+  if square.hasRemovablePiece:
+    if turn.player.hasPieceOn(square):
+      return hypothetical.requiredPiecesOn(square) < 2
+    else:
+      return true
+
 proc moveAi(hypothetical:Hypothetic) =
   let 
     move = hypothetical.move(dice)
-    remPiece = hypothetical.aiRemovePiece(move.toSquare)
-  var
-    pieceRem = removePieceOn(move.toSquare)
+    currentPosEval = hypothetical.evalPos()
   echo "move: ",move
-  moveFromTo(move.fromSquare,move.toSquare)
-  if remPiece: 
-    removePlayersPiece(pieceRem)
-    playSound("Gunshot")
-    playSound("Deanscream-2")
+  if move.eval >= currentPosEval:
+    let removePiece = hypothetical.aiRemovePiece(move.toSquare)
+    moveFromTo(move.fromSquare,move.toSquare)
+    if removePiece:
+      removePlayersPiece(removePieceOn(move.toSquare))
+      playSound("Gunshot")
+      playSound("Deanscream-2")
+  else:
+    echo "ai skips move:"
+    echo "currentPosEval: ",currentPosEval
+    echo "moveEval: ",move.eval
 
 proc runAi() =
   aiWorking = true

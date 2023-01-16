@@ -338,10 +338,9 @@ proc moveSelectedPieceTo(toSquare:int) =
   eraseSquareSelection()
 
 proc checkRemovePieceOn(square:int) =
-  if nrOfPiecesOn(square) == 1:
-    if square notin highways and square notin gasStations:
-      setRemovePieceOn(square)
-      removePieceDialog = newRemovePieceDialog(square)
+  if square.hasRemovablePiece:
+    setRemovePieceOn(square)
+    removePieceDialog = newRemovePieceDialog(square)
 
 proc selectPieceOn(square:int) =
   selectedSquare = square

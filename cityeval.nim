@@ -105,7 +105,6 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
           else:
             nrOfPieces += piecesOn[square]
         result = (40_000 div nrOfPiecesRequired)*nrOfPieces
-        #echo card.title,": square: ",square," bonus: ",result
 
 proc blueVals*(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   result.setLen(squares.len)
@@ -134,7 +133,6 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
   result = toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
-#  echo "square: ",square,": eval: ",result
 
 proc evalPos*(hypothetical:Hypothetic): int = 
   hypothetical.pieces.mapIt(hypothetical.evalSquare(it)).sum
@@ -157,12 +155,10 @@ proc evalBlue(hypothetical:Hypothetic,card:BlueCard): int =
   )
 
 proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
-#  echo "evalBlues:"
   for card in hypothetical.cards:
     var tc = card
     tc.eval = hypothetical.evalBlue(card)
     result.add tc
-#    echo tc.title&": ",tc.eval
   result.sort((a,b) => b.eval - a.eval)
 
 proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
@@ -224,12 +220,41 @@ proc comboSortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
       hypothetical.pieces,
       hypothetical.cards.filterIt(it notIn bestCombo))
     )
-  else: return hypothetical.evalBlues
 
-proc evalMove(hypo:Hypothetic,pieceNr,toSquare:int): int =
-  var pieces = hypo.pieces
-  pieces[pieceNr] = toSquare
-  (hypo.board,pieces,hypo.cards).evalPos()
+proc isCashable(hypothetical:Hypothetic,plan:BlueCard): bool =
+  let 
+    (squares,nrOfPiecesRequired) = plan.requiredCardSquares()
+    nrOfPiecesOnSquares = squares.mapIt(hypothetical.pieces.count(it))
+    requiredOk = toSeq(0..squares.len-1).allIt(nrOfPiecesOnSquares[it] >= nrOfPiecesRequired[it])
+    oneInMoreRequired = plan.squares.oneInMoreRequired.len > 0
+  if requiredOk:
+    if oneInMoreRequired: 
+      return hypothetical.pieces.anyIt(it in plan.squares.oneInMoreRequired)
+    else:
+      return true
+
+proc playerPlans(hypothetical:Hypothetic): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
+  for card in hypothetical.cards:
+    if hypothetical.isCashable(card):
+      result.cashablePlans.add(card)
+    else:
+      result.notCashablePlans.add(card)
+
+proc removePiece(hypothetical:Hypothetic,square:int): bool =
+  square.hasRemovablePiece and
+  turn.player.piecesOnSquare(0) == 0 and
+  turn.player.hasPieceOn(square) and
+  hypothetical.requiredPiecesOn(square) < 2
+
+proc evalMove(hypothetical:Hypothetic,pieceNr,toSquare:int): int =
+  var 
+    pieces = hypothetical.pieces
+#    cards = hypothetical.cards.filterIt(it notIn hypothetical.playerPlans.cashablePlans)
+  if hypothetical.removePiece(toSquare):
+    pieces[pieceNr] = 0
+  else:
+    pieces[pieceNr] = toSquare
+  (hypothetical.board,pieces,hypothetical.cards).evalPos()
 
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
   let
@@ -248,12 +273,12 @@ proc move*(hypothetical:Hypothetic,dice:openArray[int]): Move =
   echo moves
   result = moves.sortedByIt(it.eval)[^1]
 
-proc hypoMoves(hypothetical:Hypothetic): seq[Move] =
+proc diceMoves(hypothetical:Hypothetic): seq[Move] =
   for pieceNr,fromSquare in hypothetical.pieces:
     for die in 1..6: result.add hypothetical.bestMove(pieceNr,fromSquare,die)
 
 proc bestDiceMoves*(hypothetical:Hypothetic): seq[Move] =
-  let moves = hypothetical.hypoMoves()
+  let moves = hypothetical.diceMoves()
   for die in 1..6:
     let dieMoves = moves.filterIt(it.die == die)
     result.add dieMoves[dieMoves.mapIt(it.eval).maxIndex()]

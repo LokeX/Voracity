@@ -1,6 +1,7 @@
 import cityscape
 import strutils
 import sequtils
+import algorithm
 import random
 import sugar
 
@@ -43,6 +44,7 @@ const
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
   defaultPlayerKinds = [computer,computer,none,none,none,none]
+  slums* = [56,58,59]
   shops* = [23,34,42,44,50]
   banks* = [3,14,24,38,52]
   highways* = [5,17,29,41,53]
@@ -147,6 +149,8 @@ proc oneInMoreCardSquaresTitle*(plan:BlueCard): string =
     return "Gasstation"
   elif plan.squares.oneInMoreRequired.anyIt(it in bars): 
     return "Bar"
+  elif plan.squares.oneInMoreRequired.anyIt(it in slums): 
+    return "Slum"
 
 proc requiredCardSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
   let squares = plan.squares.required.deduplicate()
@@ -173,7 +177,7 @@ proc playerPlans(): tuple[cashablePlans,notCashablePlans:seq[BlueCard]] =
 
 proc cashInPlans*(): int =
   let (cashablePlans,notCashablePlans) = playerPlans()
-  usedCards.add(cashablePlans)
+  usedCards.add(cashablePlans.sortedByIt(it.cash))
   turn.player.cards = notCashablePlans
   turn.player.cash += cashablePlans.mapIt(it.cash).sum
   cashablePlans.len
@@ -238,6 +242,7 @@ proc nextPlayerTurn*() =
   nrOfUndrawnBlueCards = countNrOfUndrawnBlueCards() 
   echo "undrawn cards: ",nrOfUndrawnBlueCards
 
+
 proc removePieceOn*(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none):
     for pieceNr,piece in player.piecesOnSquares:
@@ -265,6 +270,11 @@ proc playersPiecesOnSquare(square:int): array[1..6,int] =
 
 proc nrOfPiecesOn*(square:int): int =
   playersPiecesOnSquare(square).sum
+
+proc hasRemovablePiece*(square:int): bool =
+  nrOfPiecesOn(square) == 1 and 
+  square notIn highways and 
+  square notIn gasStations
 
 proc hasPieceOn*(player:Player,square:int): bool =
   player.piecesOnSquares.any(p => p == square)
