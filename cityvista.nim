@@ -315,8 +315,8 @@ proc setDiceMoved(square:int) =
   if not turn.diceMoved:
     turn.diceMoved = not (
       square in gasStations and 
-      selectedSquare in highways or
-      selectedSquare == 0
+      (selectedSquare in highways or
+      selectedSquare == 0)
     )
 
 proc moveFromTo*(fromSquare,toSquare:int) =

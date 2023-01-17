@@ -242,12 +242,9 @@ proc player(hypothetical:Hypothetic): Player =
   Player(piecesOnSquares:hypothetical.pieces,cards:hypothetical.cards)
 
 proc evalMove(hypothetical:Hypothetic,pieceNr,toSquare:int): int =
-  var 
-    pieces = hypothetical.pieces
+  var pieces = hypothetical.pieces
   if hypothetical.removePiece(toSquare):
-    pieces[pieceNr] = 0
-  else:
-    pieces[pieceNr] = toSquare
+    pieces[pieceNr] = 0 else: pieces[pieceNr] = toSquare
   let
     cards = hypothetical.cards.filterIt(it notIn hypothetical.player.plans.cashable)
     before = (hypothetical.board,pieces,hypothetical.cards).evalPos()

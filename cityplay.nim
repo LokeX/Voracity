@@ -189,14 +189,15 @@ proc drawBlueCard*(cardTitle:string) =
   if nrOfUndrawnBlueCards > 0:
     if blueCards.len == 0:
       shuffleBlueCards()
+    var index = -1 
     if cardTitle.len > 0:
-      let index = blueCards.mapIt(it.title).find(cardTitle)
-      if index == -1:
-        turn.player.cards.add(blueCards.pop)
-      else:
-        turn.player.cards.add(blueCards[index])
-        blueCards.delete(index)
-      dec nrOfUndrawnBlueCards
+      index = blueCards.mapIt(it.title).find(cardTitle)
+    if index == -1:
+      turn.player.cards.add(blueCards.pop)
+    else:
+      turn.player.cards.add(blueCards[index])
+      blueCards.delete(index)
+    dec nrOfUndrawnBlueCards
 
 proc drawBlueCard*() = drawBlueCard("")
 
