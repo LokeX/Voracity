@@ -97,14 +97,24 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
         piecesOn = requiredSquares.mapIt(hypothetical.pieces.count(it))
         requiredPiecesOn = requiredSquares.mapIt(card.squares.required.count(it))
         freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
-      if freePieces < 1 and hypothetical.blueCovered(card):
+        hasCover = hypothetical.blueCovered(card)
+      if requiredSquares.len == 1:
+        echo card.title,":"
+        echo "piecesOn: ",piecesOn
+        echo "requiredPiecesOn: ",requiredPiecesOn
+        echo "freePieces: ",freePieces
+        echo "hasCover: ",hasCover
+      if freePieces < 1 and hasCover:
         var nrOfPieces = 1
         for square in 0..requiredSquares.len-1:
           if piecesOn[square] > requiredPiecesOn[square]:
             nrOfPieces += requiredPiecesOn[square]
           else:
             nrOfPieces += piecesOn[square]
-        result = (40_000 div nrOfPiecesRequired)*nrOfPieces
+        result = (card.cash div nrOfPiecesRequired)*nrOfPieces
+        if requiredSquares.len == 1:
+          echo "nrOfPieces: ",nrOfPieces
+          echo "bonus: ",result
 
 proc blueVals*(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   result.setLen(squares.len)

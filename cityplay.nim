@@ -185,12 +185,20 @@ proc cashInPlans*(): int =
   turn.player.cash += cashable.mapIt(it.cash).sum
   cashable.len
 
-proc drawBlueCard*() = 
+proc drawBlueCard*(cardTitle:string) = 
   if nrOfUndrawnBlueCards > 0:
     if blueCards.len == 0:
       shuffleBlueCards()
-    turn.player.cards.add(blueCards.pop)
-    dec nrOfUndrawnBlueCards
+    if cardTitle.len > 0:
+      let index = blueCards.mapIt(it.title).find(cardTitle)
+      if index == -1:
+        turn.player.cards.add(blueCards.pop)
+      else:
+        turn.player.cards.add(blueCards[index])
+        blueCards.delete(index)
+      dec nrOfUndrawnBlueCards
+
+proc drawBlueCard*() = drawBlueCard("")
 
 proc rollDice*() = 
   for i,die in dice: dice[i] = rand(1..6)

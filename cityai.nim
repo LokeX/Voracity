@@ -69,22 +69,23 @@ proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
       return true
 
 proc moveAi(hypothetical:Hypothetic) =
+#    currentPosEval = hypothetical.evalPos()
+#  if move.eval >= currentPosEval:
   let 
     move = hypothetical.move(dice)
-    currentPosEval = hypothetical.evalPos()
+    removePiece = hypothetical.aiRemovePiece(move.toSquare)
+    playersPiece = removePieceOn(move.toSquare)
   echo "move: ",move
-  if move.eval >= currentPosEval:
-    let removePiece = hypothetical.aiRemovePiece(move.toSquare)
-    moveFromTo(move.fromSquare,move.toSquare)
-    if removePiece:
-      removePlayersPiece(removePieceOn(move.toSquare))
-      playSound("Gunshot")
-      playSound("Deanscream-2")
-  else:
+  moveFromTo(move.fromSquare,move.toSquare)
+  if removePiece:
+    removePlayersPiece(playersPiece)
+    playSound("Gunshot")
+    playSound("Deanscream-2")
+#[   else:
     echo "ai skips move:"
     echo "currentPosEval: ",currentPosEval
     echo "moveEval: ",move.eval
-
+ ]#
 proc runAi() =
   aiWorking = true
   drawCards()
