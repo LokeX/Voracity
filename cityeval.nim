@@ -17,7 +17,7 @@ type
     pieces:array[5,int]
     cards:seq[BlueCard]
 
-proc countBars(pieces:array[5,int]): int = pieces.countIt(it in bars)
+proc countBars*(pieces:array[5,int]): int = pieces.countIt(it in bars)
 
 proc cardVal(hypothetical:Hypothetic): int =
   let val = 3 - hypothetical.cards.len

@@ -15,6 +15,10 @@ Road runner
 {55}[5,17,29,41,53]
 30000
 plan:
+Inspection
+{60}[5,17,29,41,53]
+30000
+plan:
 Slum lord
 {22}[56,58,59]
 35000
@@ -37,6 +41,14 @@ On the outside
 plan:
 400 kilo
 {30,49}
+40000
+plan:
+Informer
+{57,60}
+40000
+plan:
+Bodyguard
+{57,4}
 40000
 plan:
 Speciments

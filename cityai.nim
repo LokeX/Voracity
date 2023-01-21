@@ -62,13 +62,45 @@ proc echoCards(hypothetical:Hypothetic) =
     echo "card: ",card.title
     echo "eval: ",card.eval
 
+proc knownBlues(): seq[BlueCard] =
+  result.add usedCards
+  result.add turn.player.cards
+
+proc cardsThatRequire(cards:seq[BlueCard],square:int): seq[BlueCard] =
+  cards.filterIt(square in it.squares.required or square in it.squares.oneInMoreRequired)
+
+proc planChanceOn(square:int): float =
+  let 
+    knownCards = knownBlues()
+    unknownCards = allBlueCards.filterIt(it notIn knownCards)
+  unknownCards.cardsThatRequire(square).len.toFloat/unknownCards.len.toFloat
+
+proc hasPlanChanceOn(player:Player,square:int): float =
+  planChanceOn(square)*player.cards.len.toFloat
+
+proc friendlyFire(hypothetical:Hypothetic,square:int): bool =
+  turn.player.hasPieceOn(square) and hypothetical.requiredPiecesOn(square) < 2
+
+proc enemyKill(hypothetical:Hypothetic,square:int): bool =
+  let 
+    planChance = removePieceOn(square).player.hasPlanChanceOn(square)
+    barKill = square in bars and (hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3)
+  planChance > 0.05 or barKill
+
 proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
+  square.hasRemovablePiece and (hypothetical.friendlyFire(square) or 
+  hypothetical.enemyKill(square))
+
+#[ proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
   if square.hasRemovablePiece:
     if turn.player.hasPieceOn(square):
       return hypothetical.requiredPiecesOn(square) < 2
     else:
-      return true
-
+      let 
+        planChance = removePieceOn(square).player.hasPlanChanceOn(square)
+        barKill = square in bars and (hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3)
+      return planChance > 0.05 or barKill
+ ]#
 proc moveAi(hypothetical:Hypothetic) =
 #    currentPosEval = hypothetical.evalPos()
 #  if move.eval >= currentPosEval:
@@ -93,11 +125,11 @@ proc runAi() =
   var hypothetical = hypotheticalInit()
   hypothetical.cards = hypothetical.comboSortBlues()
   turn.player.cards = hypothetical.cards
-  hypo = hypothetical
-  echo "dice: ",dice
   hypothetical.echoCards()
   echo "old sort:"
   for blue in hypothetical.sortBlues(): echo blue.title
+  hypo = hypothetical
+  echo "dice: ",dice
   if not hypothetical.reroll():
     hypothetical.moveAi()
     hypothetical.pieces = turn.player.piecesOnSquares

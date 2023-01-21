@@ -63,6 +63,7 @@ var
 #  board*:Board
   blueCards*:seq[BlueCard]
   usedCards*:seq[BlueCard]
+  allBlueCards*:seq[BlueCard]
   nrOfUndrawnBlueCards*:int
 
 proc toggleCashToWin*() =
@@ -215,6 +216,9 @@ proc startDiceRoll*() =
     dieRollFrame = 0
     playSound("wuerfelbecher")
 
+proc nrOfPlayers*(): int =
+  players.filterIt(it.kind != none).len
+
 proc newDefaultPlayers*(): array[1..6,Player] =
   for i in 1..6:
     result[i] = Player(
@@ -253,7 +257,6 @@ proc nextPlayerTurn*() =
   turn.player.turnNr = turn.nr 
   nrOfUndrawnBlueCards = countNrOfUndrawnBlueCards() 
   echo "undrawn cards: ",nrOfUndrawnBlueCards
-
 
 proc removePieceOn*(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none):
@@ -332,8 +335,9 @@ proc movePiece*(fromSquare,toSquare:int) =
 players = newDefaultPlayers()
 #board = putPiecesOnBoard() 
 blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
+allBlueCards = blueCards
 echo "nr of blues: ",blueCards.len
-for card in blueCards:
+for card in allBlueCards:
   echo card.title
   echo card.kind
   echo card.squares.required
