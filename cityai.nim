@@ -46,16 +46,16 @@ proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
     playSound("page-flip-2")
-    for card in turn.player.cards: echo "player draws: ",card.title
     if cashInPlans() > 0: 
       playSound("coins-to-table-2")
 
 proc reroll(hypothetical:Hypothetic): bool =
   let bestDiceMoves = hypothetical.bestDiceMoves()
-  for diceMove in bestDiceMoves:
+
+#[   for diceMove in bestDiceMoves:
     echo "DiceMove: ",diceMove
+ ]#
   isDouble() and dice[1] notIn bestDiceMoves.mapIt(it.die)[^2..^1]
-#  isDouble() and bestDiceMoves.mapIt(it.die)[^1] != dice[1]
 
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:
@@ -85,68 +85,57 @@ proc enemyKill(hypothetical:Hypothetic,square:int): bool =
   let 
     planChance = removePieceOn(square).player.hasPlanChanceOn(square)
     barKill = square in bars and (hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3)
+  echo "removePiece, planChance: ",planChance
   planChance > 0.05 or barKill
 
 proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
   square.hasRemovablePiece and (hypothetical.friendlyFire(square) or 
   hypothetical.enemyKill(square))
 
-#[ proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
-  if square.hasRemovablePiece:
-    if turn.player.hasPieceOn(square):
-      return hypothetical.requiredPiecesOn(square) < 2
-    else:
-      let 
-        planChance = removePieceOn(square).player.hasPlanChanceOn(square)
-        barKill = square in bars and (hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3)
-      return planChance > 0.05 or barKill
- ]#
-proc moveAi(hypothetical:Hypothetic) =
-#    currentPosEval = hypothetical.evalPos()
-#  if move.eval >= currentPosEval:
+proc moveAi(hypothetical:Hypothetic): Hypothetic =
   let 
     move = hypothetical.move(dice)
-    removePiece = hypothetical.aiRemovePiece(move.toSquare)
-    playersPiece = removePieceOn(move.toSquare)
-  echo "move: ",move
-  moveFromTo(move.fromSquare,move.toSquare)
-  if removePiece:
-    removePlayersPiece(playersPiece)
-    playSound("Gunshot")
-    playSound("Deanscream-2")
-#[   else:
+    currentPosEval = hypothetical.evalPos()
+  if move.eval >= currentPosEval:
+    let 
+      removePiece = hypothetical.aiRemovePiece(move.toSquare)
+      pieceToRemove = removePieceOn(move.toSquare)
+    echo "move: ",move
+    moveFromTo(move.fromSquare,move.toSquare)
+    if removePiece:
+      removePlayersPiece(pieceToRemove)
+      playSound("Gunshot")
+      playSound("Deanscream-2")
+    result = hypothetical
+    result.pieces = turn.player.piecesOnSquares
+  else:
     echo "ai skips move:"
     echo "currentPosEval: ",currentPosEval
     echo "moveEval: ",move.eval
- ]#
-proc runAi() =
-  aiWorking = true
+    return hypothetical
+
+proc aiReroll() =
+  echo "reroll"
+  sleep(1000)
+  startDiceRoll()
+  aiWorking = false
+
+proc aiDraw(hypothetical:Hypothetic): Hypothetic =
   drawCards()
-  var hypothetical = hypotheticalInit()
-  hypothetical.cards = hypothetical.comboSortBlues()
-  turn.player.cards = hypothetical.cards
+  result = hypothetical
+  result.cards = turn.player.cards
+  result.cards = result.comboSortBlues()
+  turn.player.cards = result.cards
   hypothetical.echoCards()
-  echo "old sort:"
-  for blue in hypothetical.sortBlues(): echo blue.title
-  hypo = hypothetical
-  echo "dice: ",dice
+
+proc aiTurn() =
+  aiWorking = true
+  var hypothetical = hypotheticalInit().aiDraw
   if not hypothetical.reroll():
-    hypothetical.moveAi()
-    hypothetical.pieces = turn.player.piecesOnSquares
-    drawCards() 
-    echo "discard sort:"
-    hypothetical.cards = turn.player.cards
-    hypothetical.cards = hypothetical.comboSortBlues()
-    turn.player.cards = hypothetical.cards
-    hypothetical.echoCards()
-    echo "old sort:"
-    for blue in hypothetical.sortBlues(): echo blue.title
+    hypothetical = hypothetical.moveAi()
+    hypothetical = hypothetical.aiDraw
   else:
-    echo "reroll"
-    sleep(1000)
-    startDiceRoll()
-    aiWorking = false
-  echo "ai: done"
+    aiReroll()
   aiDone = true
 
 proc computeBoard() =
@@ -203,7 +192,7 @@ proc draw (b:var Boxy) =
   if turn != nil: b.drawVals()
 
 proc cycle() =
-  if aiCanRun(): runAi()
+  if aiCanRun(): aiTurn()
 
 proc initCityai*() =
   addCall(newCall("cityai",keyboard,mouse,draw,cycle))
