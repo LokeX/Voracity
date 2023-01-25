@@ -45,26 +45,9 @@ proc covers(pieceSquare,coverSquare:int): bool =
 proc isCovered(hypothetical:Hypothetic, square:int): bool =
   hypothetical.pieces.anyIt(it.covers(square))
 
-proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[tuple[pieceNr,squareNr:int]] =
-  for pieceNr,pieceSquare in hypothetical.pieces:
-    for blueSquareNr,blueSquare in card.squares.required:
-      if pieceSquare == blueSquare or pieceSquare.covers(blueSquare): 
-        result.add (pieceNr,blueSquareNr)
-        if pieceSquare == blueSquare: break
-
-proc blueCovered(hypothetical:Hypothetic,card:BlueCard): bool =
-  let 
-    covers = hypothetical.blueCovers(card)
-    availablePieces = covers.mapIt(it.pieceNr).deduplicate
-    enoughPieces =  availablePieces.len >= card.squares.required.len
-  for squareNr in 0..card.squares.required.len-1:
-    if covers.filterIt(it.squareNr == squareNr).len == 0:
-      return false
-  return enoughPieces
-
 proc blueCoversTest(hypothetical:Hypothetic,card:BlueCard): seq[Cover] =
+  let requiredDistinct = card.squares.required.deduplicate
   for pieceNr,pieceSquare in hypothetical.pieces:
-    let requiredDistinct = card.squares.required.deduplicate
     if pieceSquare in requiredDistinct:
       result.add (pieceNr,pieceSquare)
     else:
@@ -72,11 +55,11 @@ proc blueCoversTest(hypothetical:Hypothetic,card:BlueCard): seq[Cover] =
         if pieceSquare.covers(blueSquare): 
           result.add (pieceNr,blueSquare)
 
-proc enoughPiecesFor(card:BlueCard,covers:seq[Cover]): bool =
+proc enoughPiecesIn(card:BlueCard,covers:seq[Cover]): bool =
   let availablePieces = covers.mapIt(it.pieceNr).deduplicate
   availablePieces.len >= card.squares.required.len
 
-proc squaresCoveredBy(card:BlueCard,covers:seq[Cover]): bool =
+proc requiredSquaresIn(card:BlueCard,covers:seq[Cover]): bool =
   let 
     required = card.squares.required
     requiredDistinct = required.deduplicate
@@ -87,7 +70,7 @@ proc squaresCoveredBy(card:BlueCard,covers:seq[Cover]): bool =
 
 proc isCovered(hypothetical:Hypothetic,card:BlueCard): bool =
   let covers = hypothetical.blueCoversTest(card)
-  card.squaresCoveredBy(covers) and card.enoughPiecesFor(covers)
+  card.requiredSquaresIn(covers) and card.enoughPiecesIn(covers)
 
 proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
   let 
@@ -126,13 +109,6 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
         requiredPiecesOn = requiredSquares.mapIt(card.squares.required.count(it))
         freePieces = piecesOn[squareIndex] - requiredPiecesOn[squareIndex]
         hasCover = hypothetical.isCovered(card)
-#        hasCover = hypothetical.blueCovered(card)
-      if requiredSquares.len == 1:
-        echo card.title,":"
-        echo "piecesOn: ",piecesOn
-        echo "requiredPiecesOn: ",requiredPiecesOn
-        echo "freePieces: ",freePieces
-        echo "hasCover: ",hasCover
       if freePieces < 1 and hasCover:
         var nrOfPieces = 1
         for square in 0..requiredSquares.len-1:
@@ -141,9 +117,6 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
           else:
             nrOfPieces += piecesOn[square]
         result = (card.cash div nrOfPiecesRequired)*nrOfPieces
-        if requiredSquares.len == 1:
-          echo "nrOfPieces: ",nrOfPieces
-          echo "bonus: ",result
 
 proc blueVals*(hypothetical:Hypothetic,squares:seq[int]): seq[int] =
   result.setLen(squares.len)
@@ -200,22 +173,6 @@ proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
     result.add tc
   result.sort((a,b) => b.eval - a.eval)
 
-proc sortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
-  var cards = hypothetical.evalBlues
-  if cards.len > 3:
-    let board = baseEvalBoard(hypothetical)
-    var evals:seq[tuple[cards:seq[BlueCard],eval:int]]
-    for i in 0..cards.len-1:
-      let eval = (board,hypothetical.pieces,cards[0..2]).evalPos
-      evals.add (cards[0..2],eval)
-      cards.insert(cards.pop,0)
-    let bestCombo = evals[evals.mapIt(it.eval).maxIndex].cards
-    for i,card in bestCombo:
-#      echo card.title,": best combo eval: ",evals[i].eval
-      cards.del(cards.find(card))
-    result.add bestCombo
-  result.add cards
-
 proc comboMatch(comboA,comboB:seq[BlueCard]): bool =
   comboA.allIt(it in comboB)
 
@@ -261,23 +218,45 @@ proc comboSortBlues*(hypothetical:Hypothetic): seq[BlueCard] =
     )
   else: return hypothetical.evalBlues
 
-proc removePiece(hypothetical:Hypothetic,square:int): bool =
-  square.hasRemovablePiece and
-  turn.player.piecesOnSquare(0) == 0 and
-  turn.player.hasPieceOn(square) and
-  hypothetical.requiredPiecesOn(square) < 2
+proc comboSortBlues(hypothetical:Hypothetic,cards:seq[BlueCard]): seq[BlueCard] =
+  var hypo = hypothetical
+  hypo.cards = cards
+  hypo.comboSortBlues
 
 proc player(hypothetical:Hypothetic): Player =
   Player(piecesOnSquares:hypothetical.pieces,cards:hypothetical.cards)
 
+proc friendlyFireBest(hypothetical:Hypothetic,move:Move): bool =
+  var hypoMove = hypothetical
+  hypoMove.pieces[move.pieceNr] = move.toSquare
+  let eval = hypoMove.evalPos
+  hypoMove.pieces[move.pieceNr] = 0
+  let killEval = hypoMove.evalPos
+  echo "friendlyFireEval: ",killEval
+  echo "noFriendlyFireEval: ",eval
+  killEval > eval
+  
+proc friendlyFireAdviced*(hypothetical:Hypothetic,move:Move): bool =
+  move.fromSquare != 0 and
+  turn.player.hasPieceOn(move.toSquare) and 
+  hypothetical.requiredPiecesOn(move.toSquare) < 2 and
+  hypothetical.friendlyFireBest(move)
+
+proc threeBest(cards:seq[BlueCard]): seq[BlueCard] =
+  if cards.len > 3: 
+    var bestCards = cards
+    bestCards.setLen(3) 
+    return bestCards
+  return cards
+
 proc evalMove(hypothetical:Hypothetic,pieceNr,toSquare:int): int =
   var pieces = hypothetical.pieces
-  if hypothetical.removePiece(toSquare):
+  if hypothetical.friendlyFireAdviced (pieceNr,0,pieces[pieceNr],toSquare,0):
     pieces[pieceNr] = 0 else: pieces[pieceNr] = toSquare
   let
     cards = hypothetical.cards.filterIt(it notIn hypothetical.player.plans.cashable)
-    before = (hypothetical.board,pieces,hypothetical.cards).evalPos()
-    after = (hypothetical.board,pieces,cards).evalPos()
+    before = (hypothetical.board,pieces,hypothetical.cards.threeBest).evalPos()
+    after = (hypothetical.board,pieces,hypothetical.comboSortBlues(cards).threeBest).evalPos()
   before+(before-after)
 
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =

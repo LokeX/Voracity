@@ -68,21 +68,7 @@ var
   removePieceDialog*:Dialog
 
 proc sortBlues*() =
-#  var board:EvalBoard
   turn.player.cards = hypotheticalInit().comboSortBlues
-  echo "old sort: "
-  for blue in hypotheticalInit().sortBlues: echo blue.title
-#[   (
-    baseEvalBoard(
-      (board,
-      turn.player.piecesOnSquares,
-      turn.player.cards)
-    ),
-    turn.player.piecesOnSquares,
-    turn.player.cards
-  )
- ]#  
-#  .comboSortBlues
 
 proc newPlayerBatches(): array[1..6,AreaHandle] =
   for index in 1..6:

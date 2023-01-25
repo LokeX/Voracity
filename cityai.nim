@@ -50,12 +50,7 @@ proc drawCards() =
       playSound("coins-to-table-2")
 
 proc reroll(hypothetical:Hypothetic): bool =
-  let bestDiceMoves = hypothetical.bestDiceMoves()
-
-#[   for diceMove in bestDiceMoves:
-    echo "DiceMove: ",diceMove
- ]#
-  isDouble() and dice[1] notIn bestDiceMoves.mapIt(it.die)[^2..^1]
+  isDouble() and dice[1] in hypothetical.bestDiceMoves().mapIt(it.die)[1..3]
 
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:
@@ -78,19 +73,19 @@ proc planChanceOn(square:int): float =
 proc hasPlanChanceOn(player:Player,square:int): float =
   planChanceOn(square)*player.cards.len.toFloat
 
-proc friendlyFire(hypothetical:Hypothetic,square:int): bool =
-  turn.player.hasPieceOn(square) and hypothetical.requiredPiecesOn(square) < 2
+proc enemyKill(hypothetical:Hypothetic,move:Move): bool =
+  if turn.player.hasPieceOn(move.toSquare): return false else:
+    let 
+      planChance = removePieceOn(move.toSquare).player.hasPlanChanceOn(move.toSquare)
+      barKill = move.toSquare in bars and (
+        hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3
+      )
+    echo "removePiece, planChance: ",planChance
+    planChance > 0.05 or barKill
 
-proc enemyKill(hypothetical:Hypothetic,square:int): bool =
-  let 
-    planChance = removePieceOn(square).player.hasPlanChanceOn(square)
-    barKill = square in bars and (hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3)
-  echo "removePiece, planChance: ",planChance
-  planChance > 0.05 or barKill
-
-proc aiRemovePiece(hypothetical:Hypothetic,square:int): bool =
-  square.hasRemovablePiece and (hypothetical.friendlyFire(square) or 
-  hypothetical.enemyKill(square))
+proc aiRemovePiece(hypothetical:Hypothetic,move:Move): bool =
+  move.toSquare.hasRemovablePiece and (hypothetical.friendlyFireAdviced(move) or 
+  hypothetical.enemyKill(move))
 
 proc moveAi(hypothetical:Hypothetic): Hypothetic =
   let 
@@ -98,7 +93,7 @@ proc moveAi(hypothetical:Hypothetic): Hypothetic =
     currentPosEval = hypothetical.evalPos()
   if move.eval >= currentPosEval:
     let 
-      removePiece = hypothetical.aiRemovePiece(move.toSquare)
+      removePiece = hypothetical.aiRemovePiece(move)
       pieceToRemove = removePieceOn(move.toSquare)
     echo "move: ",move
     moveFromTo(move.fromSquare,move.toSquare)

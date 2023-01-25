@@ -3,7 +3,7 @@ Coup
 {60,60,6,6}
 150000
 plan:
-Dry cleaning
+Blood diamants
 {13}[3,14,24,38,52]
 30000
 plan:
@@ -48,7 +48,7 @@ Informer
 40000
 plan:
 Bodyguard
-{57,4}
+{60,4}
 40000
 plan:
 Speciments
