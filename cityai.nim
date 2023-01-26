@@ -50,7 +50,7 @@ proc drawCards() =
       playSound("coins-to-table-2")
 
 proc reroll(hypothetical:Hypothetic): bool =
-  isDouble() and dice[1] in hypothetical.bestDiceMoves().mapIt(it.die)[1..3]
+  isDouble() and dice[1] in hypothetical.bestDiceMoves().mapIt(it.die)[1..4]
 
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:

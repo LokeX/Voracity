@@ -45,7 +45,7 @@ proc covers(pieceSquare,coverSquare:int): bool =
 proc isCovered(hypothetical:Hypothetic, square:int): bool =
   hypothetical.pieces.anyIt(it.covers(square))
 
-proc blueCoversTest(hypothetical:Hypothetic,card:BlueCard): seq[Cover] =
+proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[Cover] =
   let requiredDistinct = card.squares.required.deduplicate
   for pieceNr,pieceSquare in hypothetical.pieces:
     if pieceSquare in requiredDistinct:
@@ -69,7 +69,7 @@ proc requiredSquaresIn(card:BlueCard,covers:seq[Cover]): bool =
   toSeq(0..requiredCounts.len-1).allIt(coversCount[it] >= requiredCounts[it])
 
 proc isCovered(hypothetical:Hypothetic,card:BlueCard): bool =
-  let covers = hypothetical.blueCoversTest(card)
+  let covers = hypothetical.blueCovers(card)
   card.requiredSquaresIn(covers) and card.enoughPiecesIn(covers)
 
 proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
@@ -91,9 +91,9 @@ proc oneRequiredBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   if card.squares.oneInMoreRequired.len > 0:
     result = hypothetical.oneInMoreBonus(card,square)
   elif turn.player.cash+20_000 > cashAmountToWin():
-    result = 100_000
+    result = 40_000
   else:
-    result = 40_000 
+    result = 20_000 
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   let
