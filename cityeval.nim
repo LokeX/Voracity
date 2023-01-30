@@ -55,11 +55,11 @@ proc blueCovers(hypothetical:Hypothetic,card:BlueCard): seq[Cover] =
         if pieceSquare.covers(blueSquare): 
           result.add (pieceNr,blueSquare)
 
-proc enoughPiecesIn(card:BlueCard,covers:seq[Cover]): bool =
+func enoughPiecesIn(card:BlueCard,covers:seq[Cover]): bool =
   let availablePieces = covers.mapIt(it.pieceNr).deduplicate
   availablePieces.len >= card.squares.required.len
 
-proc requiredSquaresIn(card:BlueCard,covers:seq[Cover]): bool =
+func requiredSquaresIn(card:BlueCard,covers:seq[Cover]): bool =
   let 
     required = card.squares.required
     requiredDistinct = required.deduplicate
@@ -81,7 +81,7 @@ proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
       result = 40_000
     elif card.squares.oneInMoreRequired.anyIt(hypothetical.isCovered(it)):
       result = 20_000
-  if piecesOnRequiredSquare and square in card.squares.oneInMoreRequired:
+  elif piecesOnRequiredSquare and square in card.squares.oneInMoreRequired:
     if hypothetical.piecesOn(square) > 0: 
       result = 40_000
     else: 
@@ -90,10 +90,11 @@ proc oneInMoreBonus(hypothetical:Hypothetic,card:BlueCard,square:int):int =
 proc oneRequiredBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   if card.squares.oneInMoreRequired.len > 0:
     result = hypothetical.oneInMoreBonus(card,square)
-  elif turn.player.cash+20_000 > cashAmountToWin():
-    result = 40_000
-  else:
-    result = 20_000 
+  else: 
+    if turn.player.cash+20_000 > cashAmountToWin():
+      result = 40_000
+    else:
+      result = 20_000 
 
 proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
   let
@@ -103,6 +104,8 @@ proc blueBonus(hypothetical:Hypothetic,card:BlueCard,square:int): int =
     let nrOfPiecesRequired = card.squares.required.len
     if nrOfPiecesRequired == 1: 
       result = hypothetical.oneRequiredBonus(card,square)
+    elif squareIndex < 0 and square in card.squares.oneInMoreRequired:
+        result = card.cash
     else:
       let
         piecesOn = requiredSquares.mapIt(hypothetical.pieces.count(it))
@@ -173,7 +176,7 @@ proc evalBlues(hypothetical:Hypothetic): seq[BlueCard] =
     result.add tc
   result.sort((a,b) => b.eval - a.eval)
 
-proc comboMatch(comboA,comboB:seq[BlueCard]): bool =
+func comboMatch(comboA,comboB:seq[BlueCard]): bool =
   comboA.allIt(it in comboB)
 
 proc blueCombos(sortCards,combo:seq[BlueCard],combos:var seq[seq[BlueCard]]) =
@@ -242,7 +245,7 @@ proc friendlyFireAdviced*(hypothetical:Hypothetic,move:Move): bool =
   hypothetical.requiredPiecesOn(move.toSquare) < 2 and
   hypothetical.friendlyFireBest(move)
 
-proc threeBest(cards:seq[BlueCard]): seq[BlueCard] =
+func threeBest(cards:seq[BlueCard]): seq[BlueCard] =
   if cards.len > 3: 
     var bestCards = cards
     bestCards.setLen(3) 
@@ -296,4 +299,3 @@ proc hypotheticalInit*(): Hypothetic =
   ),
   turn.player.piecesOnSquares,
   turn.player.cards)
-

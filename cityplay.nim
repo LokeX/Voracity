@@ -256,7 +256,6 @@ proc nextPlayerTurn*() =
     turn = Turn(nr:turnNr,player:nextPlayer)
   turn.player.turnNr = turn.nr 
   nrOfUndrawnBlueCards = countNrOfUndrawnBlueCards() 
-  echo "undrawn cards: ",nrOfUndrawnBlueCards
 
 proc removePieceOn*(square:int): tuple[player:Player,piece:int] =
   for player in players.filterIt(it.kind != none):
@@ -333,7 +332,6 @@ proc movePiece*(fromSquare,toSquare:int) =
   if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
 players = newDefaultPlayers()
-#board = putPiecesOnBoard() 
 blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
 allBlueCards = blueCards
 echo "nr of blues: ",blueCards.len

@@ -4,12 +4,32 @@ Coup
 150000
 plan:
 Blood diamants
-{13}[3,14,24,38,52]
+{11,13}
 30000
 plan:
 Light load
 {49}[23,34,42,44,50]
 30000
+plan:
+Squating
+[56,58,59]
+15000
+plan:
+Local dealership
+[31,32]
+20000
+plan:
+ATM magic
+[3,14,24,38,52]
+10000
+plan:
+Exotic merchandice
+[23,34,42,44,50]
+10000
+plan:
+Hold up
+[2,15,27,37,47]
+20000
 plan:
 Road runner
 {55}[5,17,29,41,53]

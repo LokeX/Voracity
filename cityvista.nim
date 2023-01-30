@@ -297,12 +297,17 @@ proc togglePlayerKind() =
 proc moveReady(): bool = 
   turn != nil and turn.player.kind == human and not isRollingDice()
 
+proc removedPieceToGreenOrYellow(square:int): bool =
+  selectedSquare == 0 and (square in highways or square in gasStations)
+
+proc pieceFromGreenToYellow(square:int): bool =
+  selectedSquare in highways and square in gasStations
+
 proc setDiceMoved(square:int) =
   if not turn.diceMoved:
     turn.diceMoved = not (
-      square in gasStations and 
-      (selectedSquare in highways or
-      selectedSquare == 0)
+      removedPieceToGreenOrYellow(square) or
+      pieceFromGreenToYellow(square)
     )
 
 proc moveFromTo*(fromSquare,toSquare:int) =
