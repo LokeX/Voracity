@@ -18,14 +18,16 @@ type
     pieces:array[5,int]
     cards:seq[BlueCard]
 
-proc countBars*(pieces:array[5,int]): int = pieces.countIt(it in bars)
+proc countBars*(hypothetical:Hypothetic): int = hypothetical.pieces.countIt(it in bars)
 
 proc cardVal(hypothetical:Hypothetic): int =
   let val = 3 - hypothetical.cards.len
   if val > 0: return val*5000
 
 proc barVal*(hypothetical:Hypothetic): int = 
-  valBar-(500*countBars(hypothetical.pieces))+cardVal(hypothetical)
+  let 
+    barCount = hypothetical.countBars
+  valBar-(500*barCount)+cardVal(hypothetical)
 
 func piecesOn(hypothetical:Hypothetic,square:int): int =
   hypothetical.pieces.count(square)
@@ -158,6 +160,7 @@ proc baseEvalBoard*(hypothetical:Hypothetic): EvalBoard =
     result[highway] = highwayVal
   for bar in bars: 
     result[bar] = barVal(hypothetical)
+    if hypothetical.piecesOn(bar) == 1: result[bar] *= 2
   for square in 1..60:
     if nrOfPiecesOn(square) == 1:
       result[square] += 2000
@@ -235,8 +238,8 @@ proc friendlyFireBest(hypothetical:Hypothetic,move:Move): bool =
   let eval = hypoMove.evalPos
   hypoMove.pieces[move.pieceNr] = 0
   let killEval = hypoMove.evalPos
-  echo "friendlyFireEval: ",killEval
-  echo "noFriendlyFireEval: ",eval
+#  echo "friendlyFireEval: ",killEval
+#  echo "noFriendlyFireEval: ",eval
   killEval > eval
   
 proc friendlyFireAdviced*(hypothetical:Hypothetic,move:Move): bool =

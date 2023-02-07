@@ -50,7 +50,17 @@ proc drawCards() =
       playSound("coins-to-table-2")
 
 proc reroll(hypothetical:Hypothetic): bool =
-  isDouble() and dice[1] in hypothetical.bestDiceMoves().mapIt(it.die)[1..4]
+  let 
+    bestDiceMoves = hypothetical.bestDiceMoves()
+    bestDice = bestDiceMoves.mapIt(it.die)
+  echo "dice: ",dice
+
+#[   echo "bestDiceMoves:"
+  echo bestDiceMoves
+ ]#
+  echo "bestDice:"
+  echo bestDice
+  isDouble() and dice[1] notIn bestDice[^2..^1]
 
 proc echoCards(hypothetical:Hypothetic) =
   for card in hypothetical.cards:
@@ -78,7 +88,7 @@ proc enemyKill(hypothetical:Hypothetic,move:Move): bool =
     let 
       planChance = removePieceOn(move.toSquare).player.hasPlanChanceOn(move.toSquare)
       barKill = move.toSquare in bars and (
-        hypothetical.pieces.countBars() > 0 or nrOfPlayers() < 3
+        hypothetical.countBars() > 1 or nrOfPlayers() < 3
       )
     echo "removePiece, planChance: ",planChance
     planChance > 0.05 or barKill
@@ -91,7 +101,7 @@ proc moveAi(hypothetical:Hypothetic): Hypothetic =
   let 
     move = hypothetical.move(dice)
     currentPosEval = hypothetical.evalPos()
-  if move.eval >= currentPosEval:
+  if move.eval.toFloat >= currentPosEval.toFloat*0.75:
     let 
       removePiece = hypothetical.aiRemovePiece(move)
       pieceToRemove = removePieceOn(move.toSquare)

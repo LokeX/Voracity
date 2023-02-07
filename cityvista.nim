@@ -89,18 +89,16 @@ proc wirePlayerBatches() =
       inc count
 
 proc newGame() =
+  resetBlueCards()
+  shuffleBlueCards()
   players = newPlayers(playerKinds)
-  echo "next player turn"
   nextPlayerTurn()
   wirePlayerBatches()
-  shuffleBlueCards()
-  echo "new game"
 
 proc newGameSetup*() =
   turn = nil
   players = newDefaultPlayers()
   wirePlayerBatches()
-  echo "new game setup"
 
 proc squareNames(filePath:string): seq[string] =
   var 
@@ -313,7 +311,7 @@ proc setDiceMoved(square:int) =
 proc moveFromTo*(fromSquare,toSquare:int) =
   movePiece(fromSquare,toSquare)
   setDiceMoved(toSquare)
-  if selectedSquare == 0: turn.player.cash -= piecePrice
+  if fromSquare == 0: turn.player.cash -= piecePrice
   if toSquare in bars: 
     inc nrOfUndrawnBlueCards
     playSound("can-open-1")

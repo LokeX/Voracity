@@ -55,7 +55,21 @@ proc mouse (m:MouseEvent) =
         discardCard(mo)
         sortBlues()
       if mouseOn() == "bluepile" and nrOfUndrawnBlueCards > 0:
+
+#[         echo "bluePile:"
+        for card in blueCards: echo card.title
+        echo "usedPile:"
+        for card in usedCards: echo card.title
+ ]#
+        echo "undrawn blue cards: ",nrOfUndrawnBlueCards
+        echo "nrOfCards: ",blueCards.len
+        echo "nrOfUsedCards: ",usedCards.len
+
+#[         echo "dublets: "
+        echo dublets()
+ ]#
         drawBlueCard()
+        echo $turn.player.color&" draws blue card: ",turn.player.cards[^1].title
         playSound("page-flip-2")
         if cashInPlans() > 0:
           playSound("coins-to-table-2")
@@ -63,7 +77,7 @@ proc mouse (m:MouseEvent) =
         echo $turn.player.color&" has cards:"
         for card in turn.player.cards:
           echo card.title
-    echo "pos: ",m.pos
+        echo "Undrawn blue cards left: ",nrOfUndrawnBlueCards
 
 proc drawUndrawnCardsNr(b:var Boxy) =
   if nrOfUndrawnBlueCards > 0 and turn.player.kind == human:

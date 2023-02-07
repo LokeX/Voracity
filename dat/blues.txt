@@ -5,11 +5,31 @@ Coup
 plan:
 Blood diamants
 {11,13}
-30000
+40000
+plan:
+Chicks in cages
+{19,21}
+40000
+plan:
+Meat
+{55,57}
+40000
+plan:
+Safe bet
+{4,12}
+40000
 plan:
 Light load
 {49}[23,34,42,44,50]
 30000
+plan:
+Moonshine
+{48}[1,16,18,20,28,35,40,46,51,54]
+25000
+plan:
+Birthday party
+{21}[1,16,18,20,28,35,40,46,51,54]
+25000
 plan:
 Squating
 [56,58,59]
@@ -71,12 +91,16 @@ Bodyguard
 {60,4}
 40000
 plan:
-Speciments
+Specimens
 {25,36}
 40000
 plan:
-Foreign aid
+Deadly cargo
 {55,6}
+40000
+plan:
+Foreign aid
+{49,6}
 40000
 plan:
 Underhanded
@@ -225,4 +249,4 @@ Lawfare
 plan:
 Stiffs
 {21,26}
-20000
+40000

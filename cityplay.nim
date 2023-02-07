@@ -44,6 +44,7 @@ const
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
   defaultPlayerKinds = [computer,computer,none,none,none,none]
+  condos* = [31,32]
   slums* = [56,58,59]
   shops* = [23,34,42,44,50]
   banks* = [3,14,24,38,52]
@@ -83,13 +84,27 @@ proc readFile(path:string): seq[string] =
     result.add(text.readLine)
   close(text)
 
+proc dublets*(): seq[string] =
+  let 
+    titles = blueCards.mapIt(it.title)
+    counts = titles.mapIt(titles.count(it))
+  zip(titles,counts).filterIt(it[1] > 1).mapIt(it[0]&": "&it[1].intToStr)
+  
 proc shuffleBlueCards*() =
+  echo "shuffle:"
   blueCards.add(usedCards)
   usedCards.setLen(0)
   blueCards.shuffle()
-#  blueCards.shuffle()
   for card in blueCards:
     echo card.title
+  echo "dublets:"
+  echo dublets()
+
+proc resetBlueCards*() = 
+  usedCards.setLen(0)
+  blueCards.setLen(0)
+  blueCards.add allBlueCards
+#  blueCards = allBlueCards
 
 proc countNrOfUndrawnBlueCards(): int =
   turn.player.piecesOnSquares.countIt(it in bars)
@@ -152,6 +167,8 @@ proc oneInMoreCardSquaresTitle*(plan:BlueCard): string =
     return "Bar"
   elif plan.squares.oneInMoreRequired.anyIt(it in slums): 
     return "Slum"
+  elif plan.squares.oneInMoreRequired.anyIt(it in condos): 
+    return "Condo"
 
 proc requiredCardSquares*(plan:BlueCard): tuple[squares,nrOfPieces:seq[int]] =
   let squares = plan.squares.required.deduplicate()
@@ -334,10 +351,14 @@ proc movePiece*(fromSquare,toSquare:int) =
 players = newDefaultPlayers()
 blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
 allBlueCards = blueCards
+resetBlueCards()
+shuffleBlueCards()
 echo "nr of blues: ",blueCards.len
-for card in allBlueCards:
+for card in blueCards:
   echo card.title
-  echo card.kind
+echo "nrOfCards: ",blueCards.len
+#[   echo card.kind
   echo card.squares.required
   echo card.squares.oneInMorerequired
   echo card.cash
+ ]#
