@@ -61,7 +61,6 @@ var
   dieRollFrame* = maxRollFrames
   players*:array[1..6,Player]
   turn*:Turn = nil
-#  board*:Board
   blueCards*:seq[BlueCard]
   usedCards*:seq[BlueCard]
   allBlueCards*:seq[BlueCard]

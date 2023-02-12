@@ -261,23 +261,22 @@ proc eraseSquareSelection() =
   selectedSquare = -1
   moveSquares = @[]
 
+proc endTurn*() =
+  playSound("carhorn-1")
+  oldTime = cpuTime()
+  if turn == nil: 
+    newGame()
+  elif gameWon(): 
+    newGameSetup()
+  else: 
+    nextPlayerTurn()
+
 proc mouseRightClicked() =
   if removePieceDialog != nil:
     endDialog(removePieceDialog)
   elif moveSquares.len > 0: 
     eraseSquareSelection()
-  else:
-    playSound("carhorn-1")
-    oldTime = cpuTime()
-    if turn == nil:
-      echo "right click new game"
-      newGame()
-    elif gameWon():
-      echo "right click game won"
-      newGameSetup()
-    else:
-      echo "right click next player turn"
-      nextPlayerTurn()
+  else: endTurn()
 
 proc mouseOnPlayer(): Player =
   let mo = mouseOn() 

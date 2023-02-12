@@ -14,7 +14,7 @@ type
   Board = array[0..60,Square]
 
 var
-  aiDone,aiWorking:bool
+  aiDone,aiWorking,autoEndTurn:bool
   hypo:Hypothetic
   board:Board
 
@@ -36,7 +36,7 @@ proc blueVals() =
         )
       )
 
-proc aiCanRun(): bool =
+proc aiTurn(): bool =
   not aiWorking and 
   turn != nil and 
   turn.player.kind == computer and 
@@ -71,7 +71,7 @@ proc knownBlues(): seq[BlueCard] =
   result.add usedCards
   result.add turn.player.cards
 
-proc cardsThatRequire(cards:seq[BlueCard],square:int): seq[BlueCard] =
+func cardsThatRequire(cards:seq[BlueCard],square:int): seq[BlueCard] =
   cards.filterIt(square in it.squares.required or square in it.squares.oneInMoreRequired)
 
 proc planChanceOn(square:int): float =
@@ -133,12 +133,15 @@ proc aiDraw(hypothetical:Hypothetic): Hypothetic =
   turn.player.cards = result.cards
   hypothetical.echoCards()
 
-proc aiTurn() =
+proc aiTakeTurn() =
   aiWorking = true
   var hypothetical = hypotheticalInit().aiDraw
   if not hypothetical.reroll():
     hypothetical = hypothetical.moveAi()
     hypothetical = hypothetical.aiDraw
+    if autoEndTurn: 
+      endTurn()
+      aiWorking = false
   else:
     aiReroll()
   aiDone = true
@@ -168,6 +171,7 @@ proc drawVals(b:var Boxy) =
         )
 
 proc keyboard (k:KeyEvent) =
+  if k.button == KeyE: autoEndTurn = not autoEndTurn
   if k.button == KeyA:
     turn.player.piecesOnSquares = hypo.pieces
     turn.player.cards = hypo.cards
@@ -180,24 +184,18 @@ proc keyboard (k:KeyEvent) =
     echo "n key: new game"
     playSound("carhorn-1")
     newGameSetup()
-  if k.button == ButtonUnknown:
-    echo "Rune: ",k.rune
-  else:
-    echo k.button
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState) and m.button == MouseRight:
     if aiDone:
       aiDone = false
       aiWorking = false
-#      nextPlayerTurn()
-    echo "pos: ",m.pos
 
 proc draw (b:var Boxy) =
   if turn != nil: b.drawVals()
 
 proc cycle() =
-  if aiCanRun(): aiTurn()
+  if aiTurn(): aiTakeTurn()
 
 proc initCityai*() =
   addCall(newCall("cityai",keyboard,mouse,draw,cycle))

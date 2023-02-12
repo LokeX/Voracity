@@ -261,8 +261,8 @@ proc evalMove(hypothetical:Hypothetic,pieceNr,toSquare:int): int =
     pieces[pieceNr] = 0 else: pieces[pieceNr] = toSquare
   let
     cards = hypothetical.cards.filterIt(it notIn hypothetical.player.plans.cashable)
-    before = (hypothetical.board,pieces,hypothetical.cards.threeBest).evalPos()
-    after = (hypothetical.board,pieces,hypothetical.comboSortBlues(cards).threeBest).evalPos()
+    before = (hypothetical.board,pieces,hypothetical.cards.threeBest).evalPos
+    after = (hypothetical.board,pieces,hypothetical.comboSortBlues(cards).threeBest).evalPos
   before+(before-after)
 
 proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
