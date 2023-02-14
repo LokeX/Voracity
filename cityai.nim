@@ -139,7 +139,7 @@ proc aiTakeTurn() =
   if not hypothetical.reroll():
     hypothetical = hypothetical.moveAi()
     hypothetical = hypothetical.aiDraw
-    if autoEndTurn: 
+    if autoEndTurn and not gameWon(): 
       endTurn()
       aiWorking = false
   else:
