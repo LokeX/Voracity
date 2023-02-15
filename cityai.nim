@@ -14,7 +14,8 @@ type
   Board = array[0..60,Square]
 
 var
-  aiDone,aiWorking,autoEndTurn:bool
+  aiDone,aiWorking:bool
+  autoEndTurn = true
   hypo:Hypothetic
   board:Board
 

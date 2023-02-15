@@ -11,6 +11,7 @@ const
 
 let
   miniBlue = readImage("pics\\miniplanbg.jpg")
+  miniBack = readImage("pics\\blueback.jpg")
   bluePile = newAreaHandle("bluepile",bx+630,by+440,110,180)
   usedPile = newImageHandle(("usedpile",miniBlue),bx+805,by+440)
   planbg = newImageHandle((
@@ -21,15 +22,17 @@ let
   )
 
 var
+  showCards = false
   miniBlues:seq[ImageHandle]
+  miniBacks:seq[ImageHandle]
 
-proc newMiniBlues(): seq[ImageHandle] =
+proc newMinies(name:string,img:Image): seq[ImageHandle] =
   for i in 0..7:
     result.add(
       newImageHandle(
-        ("miniblues"&i.intToStr,miniBlue),
-        mbx+(((i+2) mod 2)*(miniBlue.width+20)),
-        mby+((i div 2)*(miniBlue.height+20))
+        (name&i.intToStr,img),
+        mbx+(((i+2) mod 2)*(img.width+20)),
+        mby+((i div 2)*(img.height+20))
       )
     )
     addImage(result[i])
@@ -42,10 +45,7 @@ proc mouseOnMiniBlueNr(): int =
   return -1
 
 proc keyboard (k:KeyEvent) =
-  if k.button == ButtonUnknown:
-    echo "Rune: ",k.rune
-  else:
-    echo k.button
+  if k.button == KeyB: showCards = not showCards
 
 proc mouse (m:MouseEvent) =
   if mouseClicked(m.keyState) and turn != nil and removePieceDialog == nil:
@@ -142,6 +142,10 @@ proc drawMiniBlue(b:var Boxy,miniBlue:BlueCard,ih:ImageHandle) =
     fontFace(point,18,color(0,0,1))
   )
 
+proc drawMiniBack(b:var Boxy,ih:ImageHandle) =
+  b.drawImage(ih.img.name,imagePos(ih))
+  b.drawAreaShadow(ih.area,3,color(255,255,255,150))
+
 proc drawUsedPile(b:var Boxy) =
   if turn != nil and usedCards.len > 0:
     b.drawMiniBlue(usedCards[^1],usedPile)
@@ -149,7 +153,10 @@ proc drawUsedPile(b:var Boxy) =
 
 proc drawMiniBlues(b:var Boxy) =
   for i,blue in turn.player.cards:
-    b.drawMiniBlue(blue,miniBlues[i])
+    if showCards or turn.player.kind == human:
+      b.drawMiniBlue(blue,miniBlues[i])
+    else:
+      b.drawMiniBack(miniBacks[i])
 
 proc drawUsedPileBigBlue(b:var Boxy) =
   if mouseOn() == "usedpile" and usedCards.len > 0:
@@ -164,7 +171,8 @@ proc draw (b:var Boxy) =
     b.drawUsedPileBigBlue()
   
 proc initCityBlues*() =
-  miniBlues = newMiniBlues()
+  miniBacks = newMinies("miniback",miniBack)
+  miniBlues = newMinies("miniBlue",miniBlue)
   addMouseHandle(newMouseHandle(bluePile))
   addImage(usedPile)
   addMouseHandle(newMouseHandle(usedPile))
