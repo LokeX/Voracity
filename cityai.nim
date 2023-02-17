@@ -46,9 +46,13 @@ proc aiTurn(): bool =
 proc drawCards() =
   while nrOfUndrawnBlueCards > 0:
     drawBlueCard()
+    echo $turn.player.color&" player draws: ",turn.player.cards[^1].title
     playSound("page-flip-2")
-    if cashInPlans() > 0: 
+    let cashedPlans = cashInPlans()
+    if cashedPlans.len > 0: 
       playSound("coins-to-table-2")
+      echo $turn.player.color&" player cashes plans:"
+      for plan in cashedPlans: echo plan.title
 
 proc reroll(hypothetical:Hypothetic): bool =
   let 
@@ -136,6 +140,7 @@ proc aiDraw(hypothetical:Hypothetic): Hypothetic =
 
 proc aiTakeTurn() =
   aiWorking = true
+  echo $turn.player.color&" player takes turn:"
   var hypothetical = hypotheticalInit().aiDraw
   if not hypothetical.reroll():
     hypothetical = hypothetical.moveAi()

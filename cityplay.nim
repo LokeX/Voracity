@@ -195,12 +195,12 @@ proc plans*(player:Player): tuple[cashable,notCashable:seq[BlueCard]] =
 proc plans*(): tuple[cashable,notCashable:seq[BlueCard]] =
   turn.player.plans
 
-proc cashInPlans*(): int =
+proc cashInPlans*(): seq[BlueCard] =
   let (cashable,notCashable) = turn.player.plans
   usedCards.add(cashable.sortedByIt(it.cash))
   turn.player.cards = notCashable
   turn.player.cash += cashable.mapIt(it.cash).sum
-  cashable.len
+  cashable
 
 proc drawBlueCard*(cardTitle:string) = 
   if nrOfUndrawnBlueCards > 0:

@@ -314,7 +314,7 @@ proc moveFromTo*(fromSquare,toSquare:int) =
   if toSquare in bars: 
     inc nrOfUndrawnBlueCards
     playSound("can-open-1")
-  if cashInPlans() > 0:
+  if cashInPlans().len > 0:
     playSound("coins-to-table-2")
   echo "undrawn cards: ",nrOfUndrawnBlueCards
   playSound("driveBy")

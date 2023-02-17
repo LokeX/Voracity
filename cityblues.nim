@@ -71,7 +71,7 @@ proc mouse (m:MouseEvent) =
         drawBlueCard()
         echo $turn.player.color&" draws blue card: ",turn.player.cards[^1].title
         playSound("page-flip-2")
-        if cashInPlans() > 0:
+        if cashInPlans().len > 0:
           playSound("coins-to-table-2")
         sortBlues()
         echo $turn.player.color&" has cards:"

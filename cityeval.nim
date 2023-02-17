@@ -272,7 +272,7 @@ proc bestMove(hypothetical:Hypothetic,pieceNr,fromSquare,die:int): Move =
     bestEval = evals.maxIndex
     bestSquare = squares[bestEval]
     eval = evals[bestEval]
-  result = (pieceNr,die,fromSquare,bestSquare,eval)
+  (pieceNr,die,fromSquare,bestSquare,eval)
 
 proc move*(hypothetical:Hypothetic,dice:openArray[int]): Move = 
   var moves:seq[Move]
@@ -280,7 +280,7 @@ proc move*(hypothetical:Hypothetic,dice:openArray[int]): Move =
     for die in dice:
       moves.add hypothetical.bestMove(pieceNr,fromSquare,die)
 #  echo moves
-  result = moves.sortedByIt(it.eval)[^1]
+  moves.sortedByIt(it.eval)[^1]
 
 proc diceMoves(hypothetical:Hypothetic): seq[Move] =
   for pieceNr,fromSquare in hypothetical.pieces:
