@@ -185,9 +185,10 @@ proc keyboard (k:KeyEvent) =
     aiDone = false
     startDiceRoll()
   if k.button == KeyN:
-    aiWorking = false
-    aiDone = false
     echo "n key: new game"
+    aiWorking = false
+    aiDone = true
+    endDiceRoll()
     playSound("carhorn-1")
     newGameSetup()
 

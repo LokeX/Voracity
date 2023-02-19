@@ -232,6 +232,9 @@ proc startDiceRoll*() =
     dieRollFrame = 0
     playSound("wuerfelbecher")
 
+proc endDiceRoll* =
+  dieRollFrame = maxRollFrames
+
 proc nrOfPlayers*(): int =
   players.filterIt(it.kind != none).len
 

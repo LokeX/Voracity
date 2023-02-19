@@ -285,6 +285,7 @@ proc mouseOnPlayer(): Player =
       return player
 
 proc togglePlayerKind() =
+  echo "toggle player"
   if turn == nil:
     let pl = mouseOnPlayer()
     if pl != nil: 
@@ -374,6 +375,7 @@ proc mouseLeftClicked() =
   if removePieceDialog != nil:
     dialog()
   else:
+    echo "left click"
     diceRoll()
     togglePlayerKind()
     pieceSelectAndMove()
