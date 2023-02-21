@@ -29,7 +29,7 @@ type
     undrawnCards*:int
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
-  BlueCard* = ref object
+  BlueCard* = object
     title*:string
     kind*:string
     squares*:tuple[
