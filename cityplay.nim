@@ -25,8 +25,7 @@ type
     nr*:int
     player*:Player
     diceMoved*:bool
-    pieceMoved*:bool
-    undrawnCards*:int
+#    undrawnCards*:int
   RemovePiece* = tuple[player:Player,piece:int]
   ProtoCard = array[4,string]
   BlueCard* = object

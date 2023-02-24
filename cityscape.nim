@@ -9,21 +9,18 @@ export os
 type
   FileName   = tuple[name,path:string]
   ImageName* = tuple[name:string,image:Image]
-  
   Area* = tuple[x,y,w,h:int]
   NamedImage = object of RootObj
     img*:ImageName
   NamedArea  = object of RootObj
     name*:string
-  ImageHandle* = ref object of NamedImage
+  ImageHandle* = object of NamedImage
     area*:Area
   AreaHandle*  = ref object of NamedArea
     area*:Area
-
-  MouseHandle* = ref object 
+  MouseHandle* = object 
     name*      :string
     x1,y1,x2,y2:int
-
   KeyState* = tuple[down,pressed,released,toggle:bool]
   Event     = object of RootObj
     keyState*: KeyState
@@ -32,7 +29,6 @@ type
     pos* :tuple[x,y:int]
   KeyEvent*   = ref object of Event
     rune*:Rune
-
   KeyCall   = proc(keyboard:KeyEvent)
   MouseCall = proc(mouse:MouseEvent)
   DrawCall  = proc(boxy:var Boxy)
@@ -166,14 +162,6 @@ proc mouseOn*(ih:ImageHandle): bool = mouseOn() == ih.img.name
 
 proc mouseOn*(ah:AreaHandle): bool = mouseOn() == ah.name
 
-#[ proc mouseOn*(area:Area): bool =
-  let 
-    (mx,my) = mousePos(window.mousePos)
-    (x,y,w,h) = area
-
-  (x.toFloat*boxyScale).toInt <= mx and (y.toFloat*boxyScale).toInt <= my and 
-  mx <= ((x+w).toFloat*boxyScale).toInt and my <= ((y+h).toFloat*boxyScale).toInt
- ]#
 proc newMouseHandle*(hn:string,x,y,w,h:int): MouseHandle =
   MouseHandle(
     name:hn,
