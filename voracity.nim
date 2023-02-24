@@ -26,10 +26,12 @@ proc draw (b:var Boxy) =
   b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
 
 proc kinds(): seq[PlayerKind] =
-  readFile(settingsFile)
-  .split("@[,]\" ".toRunes)
-  .filterIt(it.len > 0)
-  .mapIt(PlayerKind(["Human","Computer","None"].find(it)))
+  try:
+    readFile(settingsFile)
+    .split("@[,]\" ".toRunes)
+    .filterIt(it.len > 0)
+    .mapIt(PlayerKind(["Human","Computer","None"].find(it)))
+  except: return
 
 proc initVoracity() =
   addImage(bg)
