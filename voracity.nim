@@ -5,7 +5,6 @@ import cityplay
 import cityblues
 import cityai
 import sequtils
-import strutils
 import os
 
 let
@@ -25,12 +24,12 @@ proc mouse (m:MouseEvent) =
 proc draw (b:var Boxy) =
   b.drawImage("bg", rect = rect(vec2(0, 0), window.size.vec2))
 
-proc kinds(): seq[PlayerKind] =
+proc playerKindsFromFile(): seq[PlayerKind] =
   try:
     readFile(settingsFile)
     .split("@[,]\" ".toRunes)
     .filterIt(it.len > 0)
-    .mapIt(PlayerKind(["Human","Computer","None"].find(it)))
+    .mapIt(PlayerKind(PlayerKind.mapIt($it).find(it)))
   except: return
 
 proc initVoracity() =
@@ -40,10 +39,9 @@ proc initVoracity() =
   initCityVista()
   initCityBlues()
   initCityai()
-  for i,kind in kinds(): playerKinds[i+1] = kind
+  for i,kind in playerKindsFromFile(): 
+    playerKinds[playerKinds.low+i] = kind
   window.visible = true
-  echo "nr of recievers: ",calls.len()
-  echo "nr of mouse handles:",mouseHandles.len()
 
 initVoracity()
 while not window.closeRequested:
