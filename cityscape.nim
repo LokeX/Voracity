@@ -25,9 +25,9 @@ type
   Event     = object of RootObj
     keyState*: KeyState
     button*  :Button
-  MouseEvent* = ref object of Event
+  MouseEvent* = object of Event
     pos* :tuple[x,y:int]
-  KeyEvent*   = ref object of Event
+  KeyEvent*   = object of Event
     rune*:Rune
   KeyCall   = proc(keyboard:KeyEvent)
   MouseCall = proc(mouse:MouseEvent)

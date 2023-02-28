@@ -2,40 +2,12 @@ import cityscape
 import cityplay
 import cityvista
 import cityeval
-import citytext
-import strutils
 import sequtils
 import os
-
-type
-  Square = object
-    vals:seq[tuple[evalDesc:string,val:int]]
-    nrOfPlayerPieces*:array[6,int]
-  Board = array[0..60,Square]
 
 var
   aiDone,aiWorking:bool
   autoEndTurn = true
-  hypo:Hypothetic
-  board:Board
-
-proc anyPieceOn(squares:seq[int]): bool = 
-  squares.anyIt(turn.player.hasPieceOn(it))
-
-proc boardVals() =
-  for highway in highways:
-    board[highway].vals.add ("highway",highwayVal)
-  for square in bars:
-      board[square].vals.add ("bar",1000)
-
-proc blueVals() =
-  for card in turn.player.cards:
-    for square in card.squares.required:
-      board[square].vals.add (
-        card.title,card.cash div (
-          if anyPieceOn(card.squares.required): 1 else: 2
-        )
-      )
 
 proc aiTurn(): bool =
   not aiWorking and 
@@ -59,10 +31,6 @@ proc reroll(hypothetical:Hypothetic): bool =
     bestDiceMoves = hypothetical.bestDiceMoves()
     bestDice = bestDiceMoves.mapIt(it.die)
   echo "dice: ",dice
-
-#[   echo "bestDiceMoves:"
-  echo bestDiceMoves
- ]#
   echo "bestDice:"
   echo bestDice
   isDouble() and dice[1] notIn bestDice[^2..^1]
@@ -152,38 +120,8 @@ proc aiTakeTurn() =
     aiReroll()
   aiDone = true
 
-proc computeBoard() =
-  blueVals()
-  boardVals()
-
-proc drawVals(b:var Boxy) =
-  let mo = mouseOnSquareNr()
-  if mo > -1 and mo <= 60:
-    var board:Board
-    computeBoard()
-    let values = board[mo].vals
-    if values.len > 0:
-      let area:Area = (bx+220,by+220,200,35*values.len)
-      b.drawRect(area.toRect,color(1,1,1))
-      b.drawAreaShadow(area,2,color(255,255,255,150))
-      for i,val in values:
-        let (desc,sval) = val
-        b.drawText(
-          "values:"&desc&i.intToStr,
-          area.x.toFloat+10,
-          area.y.toFloat+5,
-          desc&": "&sval.intToStr,
-          fontFace(roboto,20,color(0,0,0))
-        )
-
 proc keyboard (k:KeyEvent) =
   if k.button == KeyE: autoEndTurn = not autoEndTurn
-  if k.button == KeyA:
-    turn.player.piecesOnSquares = hypo.pieces
-    turn.player.cards = hypo.cards
-    aiWorking = false
-    aiDone = false
-    startDiceRoll()
   if k.button == KeyN:
     echo "n key: new game"
     aiWorking = false
@@ -198,11 +136,8 @@ proc mouse (m:MouseEvent) =
       aiDone = false
       aiWorking = false
 
-proc draw (b:var Boxy) =
-  if turn != nil: b.drawVals()
-
 proc cycle() =
   if aiTurn(): aiTakeTurn()
 
 proc initCityai*() =
-  addCall(newCall("cityai",keyboard,mouse,draw,cycle))
+  addCall(newCall("cityai",keyboard,mouse,nil,cycle))

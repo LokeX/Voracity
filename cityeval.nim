@@ -147,7 +147,7 @@ proc evalSquare(hypothetical:Hypothetic,square:int): int =
     blueSquareValues = hypothetical.blueVals(squares)
     baseSquareVals = squares.mapIt(hypothetical.board[it].toFloat)
     squarePercent = hypothetical.posPercentages(squares)
-  result = toSeq(0..posPercent.len-1)
+  toSeq(0..posPercent.len-1)
   .mapIt(((baseSquareVals[it]+blueSquareValues[it].toFloat)*squarePercent[it]).toInt)
   .sum
 
