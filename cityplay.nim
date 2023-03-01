@@ -40,6 +40,7 @@ type
     eval*:int
 
 const 
+  settingsFile* = "settings.cfg"
   piecePrice* = 5_000
   cashToWin = [0,50_000,100_000,250_000,500_000]
   defaultPlayerKinds = [computer,computer,none,none,none,none]
@@ -75,7 +76,7 @@ proc gameWon*(): bool =
 
 proc cashAmountToWin*(): int = cashToWin[cashToWinSelected]
 
-proc readFile(path:string): seq[string] =
+proc readTextFile(path:string): seq[string] =
   var 
     text = open(path,fmRead)
   while not endOfFile(text):
@@ -349,11 +350,24 @@ proc movePiece*(fromSquare,toSquare:int) =
   var pieceNr = turn.player.piecesOnSquares.find(fromSquare)
   if pieceNr > -1: turn.player.piecesOnSquares[pieceNr] = toSquare
 
+proc playerKindsFromFile*(): seq[PlayerKind] =
+  try:
+    readFile(settingsFile)
+    .split("@[,]\" ".toRunes)
+    .filterIt(it.len > 0)
+    .mapIt(PlayerKind(PlayerKind.mapIt($it).find(it)))
+  except: return
+
+proc playerKindsToFile*() =
+  writeFile(settingsFile,$playerKinds.mapIt($it))
+
 players = newDefaultPlayers()
-blueCards = newBlueCards(parseProtoCards(readFile("dat\\blues.txt")))
+blueCards = newBlueCards(parseProtoCards(readTextFile("dat\\blues.txt")))
 allBlueCards = blueCards
 resetBlueCards()
 shuffleBlueCards()
+for i,kind in playerKindsFromFile(): 
+  playerKinds[playerKinds.low+i] = kind
 echo "nr of blues: ",blueCards.len
 for card in blueCards:
   echo card.title
