@@ -246,7 +246,7 @@ proc newDefaultPlayers*(): array[1..6,Player] =
       color:PlayerColors(i-1),
       piecesOnSquares:highways
     )
-    echo players[i].kind
+#    echo players[i].kind
 
 proc newPlayers*(kind:array[6,PlayerKind]): array[1..6,Player] =
   randomize()
